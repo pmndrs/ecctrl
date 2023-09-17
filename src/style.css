@@ -1,0 +1,40 @@
+html,
+body,
+#root {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgb(253, 228, 255);
+  background: linear-gradient(
+    0deg,
+    rgba(253, 228, 255, 1) 0%,
+    rgba(124, 156, 254, 1) 100%
+  );
+}
+
+.controlKeys {
+  position: absolute;
+  width: 20rem;
+  left: 5%;
+  bottom: 13%;
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+.title {
+  font-size: 0.8rem;
+  color: darkgray;
+  position: absolute;
+  width: 100%;
+  bottom: 2%;
+  text-align: center;
+}
+
+.title > a {
+  color: rgb(79, 189, 249);
+}
