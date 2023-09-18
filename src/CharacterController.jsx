@@ -539,7 +539,7 @@ export default function CharacterController(props) {
       autoBalance ? true : false,
       autoBalance ? true : false
     );
-  }, []);
+  }, [autoBalance]);
 
   useFrame((state, delta) => {
     // Character current position
