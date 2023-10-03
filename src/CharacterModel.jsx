@@ -99,10 +99,10 @@ export default function CharacterModel(props) {
     jumpIdle: "Jump_Idle",
     jumpLand: "Jump_Land",
     fall: "Climbing", // This is for falling from high sky
-    wave: "Wave",
-    dance: "Dance",
-    cheer: "Cheer",
-    attack: "Attack(1h)",
+    action1: "Wave",
+    action2: "Dance",
+    action3: "Cheer",
+    action4: "Attack(1h)",
   };
 
   useEffect(() => {
@@ -154,14 +154,15 @@ export default function CharacterModel(props) {
     if (
       curAnimation === animationSet.jump ||
       curAnimation === animationSet.jumpLand ||
-      curAnimation === animationSet.wave ||
-      curAnimation === animationSet.attack ||
-      curAnimation === animationSet.cheer
+      curAnimation === animationSet.action1 ||
+      curAnimation === animationSet.action2 ||
+      curAnimation === animationSet.action3 ||
+      curAnimation === animationSet.action4
     ) {
       action.reset().fadeIn(0.2).setLoop(THREE.LoopOnce).play();
       action.clampWhenFinished = true;
       // Only show mug during cheer action
-      if (curAnimation === animationSet.cheer) {
+      if (curAnimation === animationSet.action3) {
         mugModel.visible = true;
       } else {
         mugModel.visible = false;
@@ -205,7 +206,7 @@ export default function CharacterModel(props) {
         args={[0.1]}
         ref={rightHandColliderRef}
         onCollisionEnter={(e) => {
-          if (curAnimation === animationSet.attack) {
+          if (curAnimation === animationSet.action4) {
             // Play punch effect
             setPunchEffectProp((prev) => ({
               ...prev,
@@ -220,7 +221,7 @@ export default function CharacterModel(props) {
       <mesh ref={leftHandRef} />
       <BallCollider args={[0.1]} ref={leftHandColliderRef} />
       {/* Character model */}
-      <group ref={group} {...props} dispose={null}>
+      <group ref={group} {...props} dispose={null} userData={{camExcludeCollision:true}}>
         <group name="Scene" scale={0.8} position={[0, -0.6, 0]}>
           <group name="KayKit_Animated_Character">
             <skinnedMesh

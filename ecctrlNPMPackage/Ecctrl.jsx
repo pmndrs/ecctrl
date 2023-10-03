@@ -7,255 +7,319 @@ import { useControls } from "leva";
 import useFollowCam from "./hooks/useFollowCam";
 import useGame from "./stores/useGame";
 
-export default function CharacterController(props) {
+export {EcctrlAnimation} from "./EcctrlAnimation"
+
+export default function Ecctrl({
+  children,
+  debug = false,
+  capsuleHalfHeight = 0.35,
+  capsuleRadius = 0.3,
+  floatHeight = 0.3,
+  followLight = false,
+  // Follow camera setups
+  camInitDis = -5,
+  camMaxDis = -7,
+  camMinDis = -0.7,
+  // Base control setups
+  maxVelLimit = 2.5,
+  turnVelMultiplier = 0.2,
+  turnSpeed = 15,
+  sprintMult = 2,
+  jumpVel = 4,
+  jumpForceToGroundMult = 5,
+  slopJumpMult = 0.25,
+  sprintJumpMult = 1.2,
+  airDragMultiplier = 0.2,
+  dragDampingC = 0.15,
+  accDeltaTime = 8,
+  rejectVelMult = 4,
+  moveImpulsePointY = 0.5,
+  camFollowMult = 11,
+  // Floating Ray setups
+  rayOriginOffest = { x: 0, y: -capsuleHalfHeight, z: 0 },
+  rayHitForgiveness = 0.1,
+  rayLength = capsuleRadius + 2,
+  rayDir = { x: 0, y: -1, z: 0 },
+  floatingDis = capsuleRadius + floatHeight,
+  springK = 1.2,
+  dampingC = 0.08,
+  // Slope Ray setups
+  showSlopeRayOrigin = false,
+  slopeRayOriginOffest = capsuleRadius,
+  slopeRayLength = capsuleRadius + 3,
+  slopeRayDir = { x: 0, y: -1, z: 0 },
+  slopeUpExtraForce = 0.1,
+  slopeDownExtraForce = 0.2,
+  // AutoBalance Force setups
+  autoBalance = true,
+  autoBalanceSpringK = 0.3,
+  autoBalanceDampingC = 0.02,
+  autoBalanceDampingOnY = 0.02,
+  // Animation temporary setups
+  animated = false,
+  ...props
+}) {
   const characterRef = useRef();
   const characterModelRef = useRef();
 
   // Animation change functions
-  const idleAnimation = useGame((state) => state.idle);
-  const walkAnimation = useGame((state) => state.walk);
-  const runAnimation = useGame((state) => state.run);
-  const jumpAnimation = useGame((state) => state.jump);
-  const jumpIdleAnimation = useGame((state) => state.jumpIdle);
-  const jumpLandAnimation = useGame((state) => state.jumpLand);
-  const fallAnimation = useGame((state) => state.fall);
-  const waveAnimation = useGame((state) => state.wave);
-  const danceAnimation = useGame((state) => state.dance);
-  const cheerAnimation = useGame((state) => state.cheer);
-  const attackAnimation = useGame((state) => state.attack);
+  const idleAnimation = !animated ? null : useGame((state) => state.idle);
+  const walkAnimation = !animated ? null : useGame((state) => state.walk);
+  const runAnimation = !animated ? null : useGame((state) => state.run);
+  const jumpAnimation = !animated ? null : useGame((state) => state.jump);
+  const jumpIdleAnimation = !animated
+    ? null
+    : useGame((state) => state.jumpIdle);
+  const jumpLandAnimation = !animated
+    ? null
+    : useGame((state) => state.jumpLand);
+  const fallAnimation = !animated ? null : useGame((state) => state.fall);
+  const action1Animation = !animated ? null : useGame((state) => state.action1);
+  const action2Animation = !animated ? null : useGame((state) => state.action2);
+  const action3Animation = !animated ? null : useGame((state) => state.action3);
+  const action4Animation = !animated ? null : useGame((state) => state.action4);
 
   /**
    * Debug settings
    */
-  const {
-    maxVelLimit,
-    turnVelMultiplier,
-    turnSpeed,
-    sprintMult,
-    jumpVel,
-    jumpForceToGroundMult,
-    slopJumpMult,
-    sprintJumpMult,
-    airDragMultiplier,
-    dragDampingC,
-    accDeltaTime,
-    rejectVelMult,
-    moveImpulsePointY,
-    camFollowMult,
-  } = useControls(
-    "Character Controls",
-    {
-      maxVelLimit: {
-        value: 2.5,
-        min: 0,
-        max: 10,
-        step: 0.01,
+  let characterControlsDebug = null;
+  let floatingRayDebug = null;
+  let slopeRayDebug = null;
+  let autoBalanceForceDebug = null;
+  if (debug) {
+    // Character Controls
+    characterControlsDebug = useControls(
+      "Character Controls",
+      {
+        maxVelLimit: {
+          value: 2.5,
+          min: 0,
+          max: 10,
+          step: 0.01,
+        },
+        turnVelMultiplier: {
+          value: 0.2,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+        turnSpeed: {
+          value: 15,
+          min: 5,
+          max: 30,
+          step: 0.1,
+        },
+        sprintMult: {
+          value: 2,
+          min: 1,
+          max: 5,
+          step: 0.01,
+        },
+        jumpVel: {
+          value: 4,
+          min: 0,
+          max: 10,
+          step: 0.01,
+        },
+        jumpForceToGroundMult: {
+          value: 5,
+          min: 0,
+          max: 80,
+          step: 0.1,
+        },
+        slopJumpMult: {
+          value: 0.25,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+        sprintJumpMult: {
+          value: 1.2,
+          min: 1,
+          max: 3,
+          step: 0.01,
+        },
+        airDragMultiplier: {
+          value: 0.2,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+        dragDampingC: {
+          value: 0.15,
+          min: 0,
+          max: 0.5,
+          step: 0.01,
+        },
+        accDeltaTime: {
+          value: 8,
+          min: 0,
+          max: 50,
+          step: 1,
+        },
+        rejectVelMult: {
+          value: 4,
+          min: 0,
+          max: 10,
+          step: 0.1,
+        },
+        moveImpulsePointY: {
+          value: 0.5,
+          min: 0,
+          max: 3,
+          step: 0.1,
+        },
+        camFollowMult: {
+          value: 11,
+          min: 0,
+          max: 15,
+          step: 0.1,
+        },
       },
-      turnVelMultiplier: {
-        value: 0.2,
-        min: 0,
-        max: 1,
-        step: 0.01,
-      },
-      turnSpeed: {
-        value: 15,
-        min: 5,
-        max: 30,
-        step: 0.1,
-      },
-      sprintMult: {
-        value: 2,
-        min: 1,
-        max: 5,
-        step: 0.01,
-      },
-      jumpVel: {
-        value: 4,
-        min: 0,
-        max: 10,
-        step: 0.01,
-      },
-      jumpForceToGroundMult: {
-        value: 5,
-        min: 0,
-        max: 80,
-        step: 0.1,
-      },
-      slopJumpMult: {
-        value: 0.25,
-        min: 0,
-        max: 1,
-        step: 0.01,
-      },
-      sprintJumpMult: {
-        value: 1.2,
-        min: 1,
-        max: 3,
-        step: 0.01,
-      },
-      airDragMultiplier: {
-        value: 0.2,
-        min: 0,
-        max: 1,
-        step: 0.01,
-      },
-      dragDampingC: {
-        value: 0.15,
-        min: 0,
-        max: 0.5,
-        step: 0.01,
-      },
-      accDeltaTime: {
-        value: 8,
-        min: 0,
-        max: 50,
-        step: 1,
-      },
-      rejectVelMult: {
-        value: 4,
-        min: 0,
-        max: 10,
-        step: 0.1,
-      },
-      moveImpulsePointY: {
-        value: 0.5,
-        min: 0,
-        max: 3,
-        step: 0.1,
-      },
-      camFollowMult: {
-        value: 11,
-        min: 0,
-        max: 15,
-        step: 0.1,
-      },
-    },
-    { collapsed: true }
-  );
+      { collapsed: true }
+    );
+    // Apply debug values
+    maxVelLimit = characterControlsDebug.maxVelLimit;
+    turnVelMultiplier = characterControlsDebug.turnVelMultiplier;
+    turnSpeed = characterControlsDebug.turnSpeed;
+    sprintMult = characterControlsDebug.sprintMult;
+    jumpVel = characterControlsDebug.jumpVel;
+    jumpForceToGroundMult = characterControlsDebug.jumpForceToGroundMult;
+    slopJumpMult = characterControlsDebug.slopJumpMult;
+    sprintJumpMult = characterControlsDebug.sprintJumpMult;
+    airDragMultiplier = characterControlsDebug.airDragMultiplier;
+    dragDampingC = characterControlsDebug.dragDampingC;
+    accDeltaTime = characterControlsDebug.accDeltaTime;
+    rejectVelMult = characterControlsDebug.rejectVelMult;
+    moveImpulsePointY = characterControlsDebug.moveImpulsePointY;
+    camFollowMult = characterControlsDebug.camFollowMult;
 
-  const {
-    rayOriginOffest,
-    rayHitForgiveness,
-    rayLength,
-    rayDir,
-    floatingDis,
-    springK,
-    dampingC,
-  } = useControls(
-    "Floating Ray",
-    {
-      rayOriginOffest: {
-        x: 0,
-        y: -0.35,
-        z: 0,
+    // Floating Ray
+    floatingRayDebug = useControls(
+      "Floating Ray",
+      {
+        rayOriginOffest: {
+          x: 0,
+          y: -capsuleHalfHeight,
+          z: 0,
+        },
+        rayHitForgiveness: {
+          value: 0.1,
+          min: 0,
+          max: 0.5,
+          step: 0.01,
+        },
+        rayLength: {
+          value: capsuleRadius + 2,
+          min: 0,
+          max: capsuleRadius + 10,
+          step: 0.01,
+        },
+        rayDir: { x: 0, y: -1, z: 0 },
+        floatingDis: {
+          value: capsuleRadius + floatHeight,
+          min: 0,
+          max: capsuleRadius + 2,
+          step: 0.01,
+        },
+        springK: {
+          value: 2,
+          min: 0,
+          max: 5,
+          step: 0.01,
+        },
+        dampingC: {
+          value: 0.2,
+          min: 0,
+          max: 3,
+          step: 0.01,
+        },
       },
-      rayHitForgiveness: {
-        value: 0.1,
-        min: 0,
-        max: 0.5,
-        step: 0.01,
-      },
-      rayLength: {
-        value: 2,
-        min: 0,
-        max: 10,
-        step: 0.01,
-      },
-      rayDir: { x: 0, y: -1, z: 0 },
-      floatingDis: {
-        value: 0.6,
-        min: 0,
-        max: 2,
-        step: 0.01,
-      },
-      springK: {
-        value: 2,
-        min: 0,
-        max: 5,
-        step: 0.01,
-      },
-      dampingC: {
-        value: 0.2,
-        min: 0,
-        max: 3,
-        step: 0.01,
-      },
-    },
-    { collapsed: true }
-  );
+      { collapsed: true }
+    );
+    // Apply debug values
+    rayOriginOffest = floatingRayDebug.rayOriginOffest;
+    rayHitForgiveness = floatingRayDebug.rayHitForgiveness;
+    rayLength = floatingRayDebug.rayLength;
+    rayDir = floatingRayDebug.rayDir;
+    floatingDis = floatingRayDebug.floatingDis;
+    springK = floatingRayDebug.springK;
+    dampingC = floatingRayDebug.dampingC;
 
-  const {
-    showSlopeRayOrigin,
-    slopeRayOriginOffest,
-    slopeRayLength,
-    slopeRayDir,
-    slopeUpExtraForce,
-    slopeDownExtraForce,
-  } = useControls(
-    "Slope Ray",
-    {
-      showSlopeRayOrigin: false,
-      slopeRayOriginOffest: {
-        value: 0.23,
-        min: 0,
-        max: 3,
-        step: 0.01,
+    // Slope Ray
+    slopeRayDebug = useControls(
+      "Slope Ray",
+      {
+        showSlopeRayOrigin: false,
+        slopeRayOriginOffest: {
+          value: capsuleRadius,
+          min: 0,
+          max: capsuleRadius + 3,
+          step: 0.01,
+        },
+        slopeRayLength: {
+          value: capsuleRadius + 3,
+          min: 0,
+          max: capsuleRadius + 13,
+          step: 0.01,
+        },
+        slopeRayDir: { x: 0, y: -1, z: 0 },
+        slopeUpExtraForce: {
+          value: 0.4,
+          min: 0,
+          max: 5,
+          step: 0.01,
+        },
+        slopeDownExtraForce: {
+          value: 0.5,
+          min: 0,
+          max: 5,
+          step: 0.01,
+        },
       },
-      slopeRayLength: {
-        value: 2.5,
-        min: 0,
-        max: 10,
-        step: 0.01,
-      },
-      slopeRayDir: { x: 0, y: -1, z: 0 },
-      slopeUpExtraForce: {
-        value: 0.1,
-        min: 0,
-        max: 5,
-        step: 0.01,
-      },
-      slopeDownExtraForce: {
-        value: 0.2,
-        min: 0,
-        max: 5,
-        step: 0.01,
-      },
-    },
-    { collapsed: true }
-  );
+      { collapsed: true }
+    );
+    // Apply debug values
+    showSlopeRayOrigin = slopeRayDebug.showSlopeRayOrigin;
+    slopeRayLength = slopeRayDebug.slopeRayLength;
+    slopeRayDir = slopeRayDebug.slopeRayDir;
+    slopeUpExtraForce = slopeRayDebug.slopeUpExtraForce;
+    slopeDownExtraForce = slopeRayDebug.slopeDownExtraForce;
 
-  const {
-    autoBalance,
-    autoBalanceSpringK,
-    autoBalanceDampingC,
-    autoBalanceDampingOnY,
-  } = useControls(
-    "AutoBalance Force",
-    {
-      autoBalance: {
-        value: true,
+    // AutoBalance Force
+    autoBalanceForceDebug = useControls(
+      "AutoBalance Force",
+      {
+        autoBalance: {
+          value: true,
+        },
+        autoBalanceSpringK: {
+          value: 1.2,
+          min: 0,
+          max: 5,
+          step: 0.01,
+        },
+        autoBalanceDampingC: {
+          value: 0.04,
+          min: 0,
+          max: 0.1,
+          step: 0.001,
+        },
+        autoBalanceDampingOnY: {
+          value: 0.02,
+          min: 0,
+          max: 0.1,
+          step: 0.001,
+        },
       },
-      autoBalanceSpringK: {
-        value: 1.2,
-        min: 0,
-        max: 5,
-        step: 0.01,
-      },
-      autoBalanceDampingC: {
-        value: 0.04,
-        min: 0,
-        max: 0.1,
-        step: 0.001,
-      },
-      autoBalanceDampingOnY: {
-        value: 0.02,
-        min: 0,
-        max: 0.1,
-        step: 0.001,
-      },
-    },
-    { collapsed: true }
-  );
+      { collapsed: true }
+    );
+    // Apply debug values
+    autoBalance = autoBalanceForceDebug.autoBalance;
+    autoBalanceSpringK = autoBalanceForceDebug.autoBalanceSpringK;
+    autoBalanceDampingC = autoBalanceForceDebug.autoBalanceDampingC;
+    autoBalanceDampingOnY = autoBalanceForceDebug.autoBalanceDampingOnY;
+  }
 
   /**
    * keyboard controls setup
@@ -268,7 +332,7 @@ export default function CharacterController(props) {
 
   // on moving object state
   let isOnMovingObject = false;
-  const stadingForcePoint = useMemo(() => new THREE.Vector3(), []);
+  const standingForcePoint = useMemo(() => new THREE.Vector3(), []);
   const movingObjectDragForce = useMemo(() => new THREE.Vector3(), []);
   const movingObjectVelocity = useMemo(() => new THREE.Vector3(), []);
   const movingObjectVelocityInCharacterDir = useMemo(
@@ -287,9 +351,9 @@ export default function CharacterController(props) {
    * Follow camera initial setups from props
    */
   const cameraSetups = {
-    camInitDis: props.camInitDis ? props.camInitDis : -5,
-    camMaxDis: props.camMaxDis ? props.camMaxDis : -7,
-    camMinDis: props.camMinDis ? props.camMinDis : -0.7,
+    camInitDis,
+    camMaxDis,
+    camMinDis,
   };
 
   /**
@@ -480,16 +544,20 @@ export default function CharacterController(props) {
 
   useEffect(() => {
     // Initialize directional light
-    dirLight = characterModelRef.current.parent.parent.children.find((item) => {
-      return item.type === "DirectionalLight";
-    });
+    if (followLight) {
+      dirLight = characterModelRef.current.parent.parent.children.find(
+        (item) => {
+          return item.type === "DirectionalLight";
+        }
+      );
+    }
 
     // Action 1 key subscribe for special animation
     const unSubscribeAction1 = subscribeKeys(
       (state) => state.action1,
       (value) => {
         if (value) {
-          waveAnimation();
+          animated && action1Animation();
         }
       }
     );
@@ -499,7 +567,7 @@ export default function CharacterController(props) {
       (state) => state.action2,
       (value) => {
         if (value) {
-          danceAnimation();
+          animated && action2Animation();
         }
       }
     );
@@ -509,17 +577,17 @@ export default function CharacterController(props) {
       (state) => state.action3,
       (value) => {
         if (value) {
-          cheerAnimation();
+          animated && action3Animation();
         }
       }
     );
 
     // Trigger key subscribe for special animation
-    const unSubscribeTrigger = subscribeKeys(
-      (state) => state.trigger,
+    const unSubscribeAction4 = subscribeKeys(
+      (state) => state.action4,
       (value) => {
         if (value) {
-          attackAnimation();
+          animated && action4Animation();
         }
       }
     );
@@ -528,7 +596,7 @@ export default function CharacterController(props) {
       unSubscribeAction1();
       unSubscribeAction2();
       unSubscribeAction3();
-      unSubscribeTrigger();
+      unSubscribeAction4();
     };
   });
 
@@ -550,7 +618,7 @@ export default function CharacterController(props) {
     /**
      * Apply character position to directional light
      */
-    if (dirLight) {
+    if (followLight && dirLight) {
       dirLight.position.x = currentPos.x + 20;
       dirLight.position.y = currentPos.y + 30;
       dirLight.position.z = currentPos.z + 10;
@@ -618,7 +686,7 @@ export default function CharacterController(props) {
       characterMassForce.y *= jumpForceToGroundMult;
       rayHit.collider
         .parent()
-        ?.applyImpulseAtPoint(characterMassForce, stadingForcePoint, true);
+        ?.applyImpulseAtPoint(characterMassForce, standingForcePoint, true);
     }
 
     // Rotate character model
@@ -631,7 +699,11 @@ export default function CharacterController(props) {
     /**
      *  Camera movement
      */
-    pivotPosition.set(currentPos.x, currentPos.y + 0.5, currentPos.z);
+    pivotPosition.set(
+      currentPos.x,
+      currentPos.y + (capsuleHalfHeight + capsuleRadius / 2),
+      currentPos.z
+    );
     pivot.position.lerp(pivotPosition, 1 - Math.exp(-camFollowMult * delta));
     state.camera.lookAt(pivot.position);
 
@@ -674,7 +746,7 @@ export default function CharacterController(props) {
     if (rayHit && canJump) {
       if (rayHit.collider.parent()) {
         // Getting the standing force apply point
-        stadingForcePoint.set(
+        standingForcePoint.set(
           rayOrigin.x,
           rayOrigin.y - rayHit.toi,
           rayOrigin.z
@@ -729,7 +801,7 @@ export default function CharacterController(props) {
               .parent()
               .applyImpulseAtPoint(
                 movingObjectDragForce,
-                stadingForcePoint,
+                standingForcePoint,
                 true
               );
           }
@@ -797,7 +869,7 @@ export default function CharacterController(props) {
         characterMassForce.set(0, floatingForce > 0 ? -floatingForce : 0, 0);
         rayHit.collider
           .parent()
-          ?.applyImpulseAtPoint(characterMassForce, stadingForcePoint, true);
+          ?.applyImpulseAtPoint(characterMassForce, standingForcePoint, true);
       }
     }
 
@@ -840,18 +912,27 @@ export default function CharacterController(props) {
     /**
      * Apply all the animations
      */
-    if (!forward && !backward && !leftward && !rightward && !jump && canJump) {
-      idleAnimation();
-    } else if (jump && canJump) {
-      jumpAnimation();
-    } else if (canJump && (forward || backward || leftward || rightward)) {
-      run ? runAnimation() : walkAnimation();
-    } else if (!canJump) {
-      jumpIdleAnimation();
-    }
-    // On high sky, play falling animation
-    if (rayHit == null && currentVel.y < 0) {
-      fallAnimation();
+    if (animated) {
+      if (
+        !forward &&
+        !backward &&
+        !leftward &&
+        !rightward &&
+        !jump &&
+        canJump
+      ) {
+        idleAnimation();
+      } else if (jump && canJump) {
+        jumpAnimation();
+      } else if (canJump && (forward || backward || leftward || rightward)) {
+        run ? runAnimation() : walkAnimation();
+      } else if (!canJump) {
+        jumpIdleAnimation();
+      }
+      // On high sky, play falling animation
+      if (rayHit == null && currentVel.y < 0) {
+        fallAnimation();
+      }
     }
   });
 
@@ -864,8 +945,9 @@ export default function CharacterController(props) {
       canSleep={false}
       ref={characterRef}
     >
-      <CapsuleCollider args={[0.35, 0.3]} />
+      <CapsuleCollider args={[capsuleHalfHeight, capsuleRadius]} />
       <group ref={characterModelRef}>
+        {/* This mesh is used for positioning the slope ray origin */}
         <mesh
           position={[
             rayOriginOffest.x,
@@ -876,11 +958,10 @@ export default function CharacterController(props) {
           visible={showSlopeRayOrigin}
           userData={{ camExcludeCollision: true }} // this won't be collide by camera ray
         >
-          {/* This is used for positioning the slope ray origin */}
           <boxGeometry args={[0.15, 0.15, 0.15]} />
         </mesh>
         {/* Character model */}
-        {props.children}
+        {children}
       </group>
     </RigidBody>
   );

@@ -1,7 +1,7 @@
 import { Grid, KeyboardControls } from "@react-three/drei";
 import { Perf } from "r3f-perf";
 import { Physics } from "@react-three/rapier";
-import CharacterController from "./CharacterController.jsx";
+import Ecctrl from "./Ecctrl.jsx";
 import Floor from "../example/Floor.jsx";
 import Lights from "../example/Lights.jsx";
 import Steps from "../example/Steps.jsx";
@@ -35,7 +35,7 @@ export default function Experience() {
     { name: "action1", keys: ["1"] },
     { name: "action2", keys: ["2"] },
     { name: "action3", keys: ["3"] },
-    { name: "trigger", keys: ["KeyF"] },
+    { name: "action4", keys: ["KeyF"] },
   ];
 
   return (
@@ -56,10 +56,18 @@ export default function Experience() {
         {/* Keyboard preset */}
         <KeyboardControls map={keyboardMap}>
           {/* Character Control */}
-          <CharacterController>
+          <Ecctrl
+            debug
+            animated
+            followLight
+            springK={2}
+            dampingC={0.2}
+            autoBalanceSpringK={1.2}
+            autoBalanceDampingC={0.04}
+          >
             {/* Replace your model here */}
             <CharacterModel />
-          </CharacterController>
+          </Ecctrl>
         </KeyboardControls>
 
         {/* Rough plan */}

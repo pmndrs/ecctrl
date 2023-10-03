@@ -1,5 +1,32 @@
 ## New Features
 
+### (2023-10-02) Pmndrs/ecctrl & npm package:
+
+- The character controller now integrated with [pmndrs/ecctrl](https://github.com/pmndrs/ecctrl)
+
+- You can easily install the npm package using the following command:
+
+```bash
+npm install ecctrl
+```
+
+To get started, import `Ecctrl` and `EcctrlAnimation`, then wrap your character model within `<Ecctrl>`:
+
+```js
+import Ecctrl, {EcctrlAnimation} from 'ecctrl'
+...
+  <Ecctrl>
+    <CharacterModel/>
+  </Ecctrl>
+...
+```
+
+- Additionally, I've prepared a simple [Ecctrl CodeSandbox](https://codesandbox.io/s/ecctrl-w-o-animations-3k3zxt) for online testing and demostration.
+
+- Also, here is another [Ecctrl CodeSandbox](https://codesandbox.io/s/ecctrl-with-animations-nr4493) showcasing character animation functionality.
+ 
+[![screenshot](example/PmndrsEcctrl.png)](https://codesandbox.io/s/ecctrl-w-o-animations-3k3zxt)
+
 ### (2023-09-13) New Character & Physics Enhancements:
 
 - Incorporate 11 dynamic animations with new floating character, Uncle Pete

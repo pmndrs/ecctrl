@@ -1,7 +1,22 @@
 {
-  "name": "character-contrller",
+  "name": "ecctrl",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "author": "Erdong Chen",
+  "license": "MIT",
+  "description": "A floating rigibody character controller for R3F",
+  "keywords": [
+    "react",
+    "three",
+    "threejs",
+    "react-three-fiber",
+    "control",
+    "character-control"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pmndrs/ecctrl.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
