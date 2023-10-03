@@ -1,17 +1,17 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
-export default create(
-  subscribeWithSelector((set) => {
+export const useGame = create(
+  subscribeWithSelector<State>((set) => {
     return {
       /**
        * Character animations state manegement
        */
       // Initial animation
-      curAnimation: null,
-      animationSet: {},
+      curAnimation: null as string,
+      animationSet: {} as AnimationSet,
 
-      initializeAnimationSet: (animationSet) => {
+      initializeAnimationSet: (animationSet: AnimationSet) => {
         set((state) => {
           if (Object.keys(state.animationSet).length === 0) {
             return { animationSet };
@@ -92,9 +92,7 @@ export default create(
 
       action1: () => {
         set((state) => {
-          if (
-            state.curAnimation === state.animationSet.idle
-          ) {
+          if (state.curAnimation === state.animationSet.idle) {
             return { curAnimation: state.animationSet.action1 };
           }
           return {};
@@ -112,9 +110,7 @@ export default create(
 
       action3: () => {
         set((state) => {
-          if (
-            state.curAnimation === state.animationSet.idle
-          ) {
+          if (state.curAnimation === state.animationSet.idle) {
             return { curAnimation: state.animationSet.action3 };
           }
           return {};
@@ -145,3 +141,27 @@ export default create(
     };
   })
 );
+
+export type AnimationSet = {
+  idle: string;
+  walk: string;
+  run: string;
+  jump: string;
+  jumpIdle: string;
+  jumpLand: string;
+  fall: string;
+  // Currently support four additional animations
+  action1: string;
+  action2: string;
+  action3: string;
+  action4: string;
+};
+
+type State = {
+  curAnimation: string;
+  animationSet: AnimationSet;
+  initializeAnimationSet: (animationSet: AnimationSet) => void;
+  reset: () => void;
+} & {
+  [key in keyof AnimationSet]: () => void;
+};

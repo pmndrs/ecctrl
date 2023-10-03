@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipDefaultLibCheck": true,
+    "target": "ESNext",
+    "verbatimModuleSyntax": true,
+    "strict": true,
+    "noEmit": true,
+    "moduleResolution": "node",
+    "strictNullChecks": false,
+    "jsx": "react-jsx",
+    "declaration": true,
+    "lib": ["es2022", "dom"]
+  }
+}

@@ -3,7 +3,7 @@ import { useRef } from "react";
 import * as THREE from "three";
 
 export default function Lights() {
-  const directionalLightRef = useRef();
+  const directionalLightRef = useRef<THREE.DirectionalLight>();
 
   useHelper(directionalLightRef, THREE.DirectionalLightHelper, 1);
 

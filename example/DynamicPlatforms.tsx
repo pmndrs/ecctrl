@@ -3,22 +3,23 @@ import { useFrame } from "@react-three/fiber";
 import {
   CuboidCollider,
   CylinderCollider,
+  RapierRigidBody,
   RigidBody,
 } from "@react-three/rapier";
 import { useRef, useMemo } from "react";
 import * as THREE from "three";
 
 export default function DynamicPlatforms() {
-  const sideMovePlatformRef = useRef();
-  const verticalMovePlatformRef = useRef();
-  const rotatePlatformRef = useRef();
-  const rotationDrumRef = useRef();
+  const sideMovePlatformRef = useRef<RapierRigidBody>();
+  const verticalMovePlatformRef = useRef<RapierRigidBody>();
+  const rotatePlatformRef = useRef<RapierRigidBody>();
+  const rotationDrumRef = useRef<RapierRigidBody>();
 
   // Initializ animation settings
   let time = null;
   const xRotationAxies = new THREE.Vector3(1, 0, 0);
   const yRotationAxies = new THREE.Vector3(0, 1, 0);
-  const zRotationAxies = new THREE.Vector3(0, 0, 1);
+
   const quaternionRotation = useMemo(() => new THREE.Quaternion(), []);
 
   useFrame((state) => {

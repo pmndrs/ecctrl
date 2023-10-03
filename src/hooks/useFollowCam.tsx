@@ -3,7 +3,7 @@ import { useThree } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 
-export default function useFollowCam(props) {
+export const useFollowCam = function (props: UseFollowCamProps) {
   const { scene, camera } = useThree();
   // const { rapier, world } = useRapier();
 
@@ -22,7 +22,7 @@ export default function useFollowCam(props) {
   let smallestDistance = null;
   let cameraDistance = null;
   let intersects = null;
-  let intersectObjects = [];
+  let intersectObjects: THREE.Object3D[] = [];
   const cameraRayDir = useMemo(() => new THREE.Vector3(), []);
   const cameraRayOrigin = useMemo(() => new THREE.Vector3(), []);
   const cameraPosition = useMemo(() => new THREE.Vector3(), []);
@@ -39,7 +39,7 @@ export default function useFollowCam(props) {
   // let rayHit = null;
 
   // Mouse move event
-  const onDocumentMouseMove = (e) => {
+  const onDocumentMouseMove = (e: MouseEvent) => {
     if (document.pointerLockElement) {
       pivot.rotation.y -= e.movementX * 0.002;
       const vy = followCam.rotation.x + e.movementY * 0.002;
@@ -56,10 +56,10 @@ export default function useFollowCam(props) {
   };
 
   // Mouse scroll event
-  const onDocumentMouseWheel = (e) => {
+  const onDocumentMouseWheel = (e: Event) => {
     if (document.pointerLockElement) {
-      const vz = originZDis - e.deltaY * 0.002;
-      const vy = followCam.rotation.x + e.movementY * 0.002;
+      const vz = originZDis - (e as WheelEvent).deltaY * 0.002;
+      const vy = followCam.rotation.x + (e as WheelEvent).movementY * 0.002;
 
       if (vz >= camMaxDis && vz <= camMinDis) {
         originZDis = vz;
@@ -72,14 +72,17 @@ export default function useFollowCam(props) {
 
   // Custom traverse function
   // Prepare intersect objects for camera collision
-  function customTraverse(object) {
+  function customTraverse(object: THREE.Object3D) {
     // Chekc if the object's userData camExcludeCollision is true
     if (object.userData && object.userData.camExcludeCollision === true) {
       return;
     }
 
     // Check if the object is a Mesh, and not Text ("InstancedBufferGeometry")
-    if (object.isMesh && object.geometry.type !== "InstancedBufferGeometry") {
+    if (
+      (object as THREE.Mesh).isMesh &&
+      (object as THREE.Mesh).geometry.type !== "InstancedBufferGeometry"
+    ) {
       intersectObjects.push(object);
     }
 
@@ -89,7 +92,7 @@ export default function useFollowCam(props) {
     });
   }
 
-  const cameraCollisionDetect = (delta) => {
+  const cameraCollisionDetect = (delta: number) => {
     // Update collision detect ray origin and pointing direction
     // Which is from pivot point to camera position
     cameraRayOrigin.copy(pivot.position);
@@ -150,4 +153,10 @@ export default function useFollowCam(props) {
   });
 
   return { pivot, followCam, cameraCollisionDetect };
-}
+};
+
+export type UseFollowCamProps = {
+  camInitDis: number;
+  camMaxDis: number;
+  camMinDis: number;
+};

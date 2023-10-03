@@ -1,15 +1,15 @@
 import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
-import { RigidBody } from "@react-three/rapier";
+import { RapierRigidBody, RigidBody } from "@react-three/rapier";
 import { useRef, useMemo, useState, useEffect } from "react";
 
 export default function ShotCube() {
   const { camera } = useThree();
   const [cubeMesh, setCubeMesh] = useState([]);
-  const cubeRef = useRef();
+  const cubeRef = useRef<RapierRigidBody>();
 
-  const position = useMemo(() => new THREE.Vector3(),[]);
-  const direction = useMemo(() => new THREE.Vector3(),[]);
+  const position = useMemo(() => new THREE.Vector3(), []);
+  const direction = useMemo(() => new THREE.Vector3(), []);
 
   const clickToCreateBox = () => {
     if (document.pointerLockElement) {
@@ -36,7 +36,8 @@ export default function ShotCube() {
           direction.x * 20,
           direction.y * 20 + 2,
           direction.z * 20
-        )
+        ),
+        false
       );
     }
   }, [cubeMesh]);
