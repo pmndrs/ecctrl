@@ -38,7 +38,11 @@ export function EcctrlAnimation(props: EcctrlAnimationProps) {
       curAnimation === props.animationSet.action3 ||
       curAnimation === props.animationSet.action4
     ) {
-      action.reset().fadeIn(0.2).setLoop(THREE.LoopOnce, 0).play();
+      action
+        .reset()
+        .fadeIn(0.2)
+        .setLoop(THREE.LoopOnce, undefined as number)
+        .play();
       action.clampWhenFinished = true;
     } else {
       action.reset().fadeIn(0.2).play();

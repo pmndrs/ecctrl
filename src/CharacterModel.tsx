@@ -162,8 +162,11 @@ export default function CharacterModel(props: CharacterModelProps) {
       curAnimation === animationSet.action3 ||
       curAnimation === animationSet.action4
     ) {
-      // TODO: check if 0 works the same as undefined
-      action.reset().fadeIn(0.2).setLoop(THREE.LoopOnce, 0).play();
+      action
+        .reset()
+        .fadeIn(0.2)
+        .setLoop(THREE.LoopOnce, undefined as number)
+        .play();
       action.clampWhenFinished = true;
       // Only show mug during cheer action
       if (curAnimation === animationSet.action3) {
