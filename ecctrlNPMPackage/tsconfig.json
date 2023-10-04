@@ -11,7 +11,6 @@
     "strictNullChecks": false,
     "jsx": "react-jsx",
     "declaration": true,
-    "lib": ["es2022", "dom"],
-    "types": ["vite/client"]
+    "lib": ["es2022", "dom"]
   }
 }
