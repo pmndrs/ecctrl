@@ -42,10 +42,10 @@ importers:
         specifier: ^0.11.2
         version: 0.11.2
       '@types/react':
-        specifier: ^18.2.15
+        specifier: ^18.2.0
         version: 18.2.15
       '@types/react-dom':
-        specifier: ^18.2.7
+        specifier: ^18.2.0
         version: 18.2.8
       '@types/three':
         specifier: ^0.153.0
@@ -111,6 +111,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: '3.0'
         version: 3.0.0(vite@4.4.5)
+      json:
+        specifier: ^11.0.0
+        version: 11.0.0
       three-stdlib:
         specifier: ^2.26.11
         version: 2.26.11(three@0.153.0)
@@ -1678,6 +1681,12 @@ packages:
   /json5@2.2.3:
     resolution: {integrity: sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==}
     engines: {node: '>=6'}
+    hasBin: true
+    dev: true
+
+  /json@11.0.0:
+    resolution: {integrity: sha512-N/ITv3Yw9Za8cGxuQqSqrq6RHnlaHWZkAFavcfpH/R52522c26EbihMxnY7A1chxfXJ4d+cEFIsyTgfi9GihrA==}
+    engines: {node: '>=0.10.0'}
     hasBin: true
     dev: true
 

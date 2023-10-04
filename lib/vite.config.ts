@@ -1,24 +1,28 @@
 import react from "@vitejs/plugin-react";
+import path from "path";
 import dts from "vite-plugin-dts";
-const isCodeSandbox =
-  // @ts-ignore
-  "SANDBOX_URL" in process.env || "CODESANDBOX_HOST" in process.env;
 
 export default {
-  plugins: [dts()],
-  root: "src/",
-  base: "./",
+  plugins: [react(), dts({ insertTypesEntry: true })],
   build: {
-    outDir: "../dist",
+    outDir: "./dist",
     emptyOutDir: true,
     lib: {
-      entry: "index.ts",
+      entry: path.resolve(__dirname, "src/index.ts"),
       name: "ecctrl",
-      formats: ["es"],
+      formats: ["es", "umd"],
       fileName: (format: string) => `index.${format}.js`,
     },
+    minify: false,
     rollupOptions: {
-      external: ["react", "react-dom"],
+      external: ["react", "react-dom", "three"],
+      output: {
+        globals: {
+          react: "React",
+          "react-dom": "ReactDOM",
+          three: "three",
+        },
+      },
     },
   },
 };

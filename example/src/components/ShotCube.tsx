@@ -5,7 +5,6 @@ import { useRef, useMemo, useState, useEffect } from "react";
 
 export default function ShotCube() {
   const { camera } = useThree();
-  console.log(camera);
   const [cubeMesh, setCubeMesh] = useState([]);
   const cubeRef = useRef<RapierRigidBody>();
 

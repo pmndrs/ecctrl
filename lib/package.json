@@ -20,16 +20,20 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "tsc && vite build",
+    "prepack": "json -f package.json -I -e \"delete this.devDependencies; delete this.dependencies\""
   },
-  "main": "dist/index.cjs.js",
-  "types": "dist/lib/src/index.d.ts",
+  "main": "dist/index.umd.js",
+  "module": "dist/index.es.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "import": "./dist/index.es.js",
-      "require": "./dist/index.cjs.js",
-      "types": "./dist/lib/src/index.d.ts"
+      "require": "./dist/index.umd.js",
+      "types": "./dist/index.d.ts"
     }
   },
   "devDependencies": {
@@ -39,6 +43,7 @@
     "@types/react-dom": "^18.2.8",
     "@types/three": "^0.153.0",
     "@vitejs/plugin-react": "3.0",
+    "json": "^11.0.0",
     "three-stdlib": "^2.26.11",
     "typescript": "^5.2.2",
     "vite": "^4.3.9",
