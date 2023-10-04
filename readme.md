@@ -37,8 +37,8 @@ import Ecctrl, {EcctrlAnimation} from 'ecctrl'
 - Additionally, I've prepared a simple [Ecctrl CodeSandbox](https://codesandbox.io/s/ecctrl-w-o-animations-3k3zxt) for online testing and demostration.
 
 - Also, here is another [Ecctrl CodeSandbox](https://codesandbox.io/s/ecctrl-with-animations-nr4493) showcasing character animation functionality.
- 
-[![screenshot](example/PmndrsEcctrl.png)](https://codesandbox.io/s/ecctrl-w-o-animations-3k3zxt)
+
+[![screenshot](images/PmndrsEcctrl.png)](https://codesandbox.io/s/ecctrl-w-o-animations-3k3zxt)
 
 Check out the [featurelog.md](/featurelog.md) for details on previous updates and features.
 

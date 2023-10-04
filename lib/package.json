@@ -1,7 +1,7 @@
 {
   "name": "ecctrl",
-  "version": "1.0.10",
-  "main": "Ecctrl.jsx",
+  "private": true,
+  "version": "1.0.0",
   "author": "Erdong Chen",
   "license": "MIT",
   "description": "A floating rigibody character controller for R3F",
@@ -20,20 +20,38 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "main": "dist/index.cjs.js",
+  "types": "dist/lib/src/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.es.js",
+      "require": "./dist/index.cjs.js",
+      "types": "./dist/lib/src/index.d.ts"
+    }
   },
   "devDependencies": {
+    "@dimforge/rapier3d-compat": "^0.11.2",
+    "@types/node": "^20.8.2",
+    "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.8",
+    "@types/three": "^0.153.0",
     "@vitejs/plugin-react": "3.0",
+    "three-stdlib": "^2.26.11",
     "typescript": "^5.2.2",
-    "vite": "^4.3.9"
+    "vite": "^4.3.9",
+    "vite-plugin-dts": "^3.6.0"
   },
   "dependencies": {
     "@react-three/drei": "^9.83.3",
     "@react-three/fiber": "^8.13.3",
     "@react-three/rapier": "^1.1.1",
     "leva": "^0.9.34",
+    "r3f-perf": "^6.7.0",
     "react": "18.2",
+    "react-dom": "18.2",
     "three": "^0.153.0",
     "zustand": "^4.4.1"
   }

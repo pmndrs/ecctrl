@@ -1,0 +1,31 @@
+{
+  "name": "example",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build"
+  },
+  "dependencies": {
+    "@react-three/drei": "^9.83.3",
+    "@react-three/fiber": "^8.13.3",
+    "@react-three/rapier": "^1.1.1",
+    "ecctrl": "workspace:*",
+    "leva": "^0.9.34",
+    "r3f-perf": "^6.7.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "three": "^0.153.0"
+  },
+  "devDependencies": {
+    "@dimforge/rapier3d-compat": "^0.11.2",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/three": "^0.153.0",
+    "@vitejs/plugin-react": "^4.0.3",
+    "three-stdlib": "^2.26.11",
+    "typescript": "^5.2.2",
+    "vite": "^4.4.5"
+  }
+}

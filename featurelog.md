@@ -24,19 +24,20 @@ import Ecctrl, {EcctrlAnimation} from 'ecctrl'
 - Additionally, I've prepared a simple [Ecctrl CodeSandbox](https://codesandbox.io/s/ecctrl-w-o-animations-3k3zxt) for online testing and demostration.
 
 - Also, here is another [Ecctrl CodeSandbox](https://codesandbox.io/s/ecctrl-with-animations-nr4493) showcasing character animation functionality.
- 
-[![screenshot](example/PmndrsEcctrl.png)](https://codesandbox.io/s/ecctrl-w-o-animations-3k3zxt)
+
+[![screenshot](images/PmndrsEcctrl.png)](https://codesandbox.io/s/ecctrl-w-o-animations-3k3zxt)
 
 ### (2023-09-13) New Character & Physics Enhancements:
 
 - Incorporate 11 dynamic animations with new floating character, Uncle Pete
 - Implement action and reaction forces on frictionless floating platforms:
+
   - Platforms now move opposite to the character's moving direction (Having less impact on havier platforms)
   - Character also applies drag force (friction) to the standing platform
   - Character's free fall height now impacts on platform reaction forces
   - Add extra downward force upon character jumps for more realistic physics
-  
-  [![screenshot](example/UnclePetePhysicsEnhance.png)](https://github.com/erdongchen-andrew/CharacterControl/tree/main/example)
+
+  [![screenshot](images/UnclePetePhysicsEnhance.png)](https://github.com/erdongchen-andrew/CharacterControl/tree/main/example)
 
 ### (2023-08-28) Character Animations:
 
@@ -45,7 +46,7 @@ import Ecctrl, {EcctrlAnimation} from 'ecctrl'
 - Fine-tune slope angle's impact on jump direction (fully customizable)
 - Tailor the rejection velocity for sudden changes in movement direction (fully customizable)
 
-  [![screenshot](example/CharacterAnimation.png)](https://github.com/erdongchen-andrew/CharacterControl/tree/main/example)
+  [![screenshot](images/CharacterAnimation.png)](https://github.com/erdongchen-andrew/CharacterControl/tree/main/example)
 
 ### (2023-08-10) Camera Enhancement:
 

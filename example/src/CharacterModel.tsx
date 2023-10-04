@@ -8,12 +8,12 @@ import {
 import { useControls } from "leva";
 import { Suspense, useEffect, useRef, useMemo, useState } from "react";
 import * as THREE from "three";
-import { useGame } from "./stores/useGame";
+import { useGame } from "ecctrl";
 import { BallCollider, RapierCollider } from "@react-three/rapier";
 import { useFrame } from "@react-three/fiber";
-import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader";
+import type { GLTF } from "three-stdlib";
 
-export default function CharacterModel(props: CharacterModelProps) {
+export function CharacterModel(props: CharacterModelProps) {
   // Change the character src to yours
   const group = useRef<THREE.Group>();
   const { nodes, animations } = useGLTF("/Floating Character.glb") as GLTF & {

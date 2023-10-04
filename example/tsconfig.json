@@ -7,10 +7,9 @@
     "verbatimModuleSyntax": true,
     "strict": true,
     "noEmit": true,
-    "moduleResolution": "node",
+    "moduleResolution": "Bundler",
     "strictNullChecks": false,
     "jsx": "react-jsx",
-    "declaration": true,
     "lib": ["es2022", "dom"],
     "types": ["vite/client"]
   }

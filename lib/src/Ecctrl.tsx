@@ -19,7 +19,7 @@ import type {
 
 export { EcctrlAnimation } from "./EcctrlAnimation";
 
-export default function Ecctrl({
+export function Ecctrl({
   children,
   debug = false,
   capsuleHalfHeight = 0.35,
