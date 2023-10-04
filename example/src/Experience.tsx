@@ -11,7 +11,7 @@ import FloatingPlatform from "./components/FloatingPlatform";
 import DynamicPlatforms from "./components/DynamicPlatforms";
 import ShotCube from "./components/ShotCube";
 import { useControls } from "leva";
-import { Ecctrl } from "../../lib/src";
+import { Ecctrl } from "ecctrl";
 import { CharacterModel } from "./CharacterModel";
 
 export default function Experience() {

@@ -17,8 +17,6 @@ import type {
   Vector,
 } from "@dimforge/rapier3d-compat";
 
-export { EcctrlAnimation } from "./EcctrlAnimation";
-
 export function Ecctrl({
   children,
   debug = false,
@@ -70,7 +68,6 @@ export function Ecctrl({
 }: EcctrlProps) {
   const characterRef = useRef<RapierRigidBody>();
   const characterModelRef = useRef<THREE.Group>();
-
   // Animation change functions
   const idleAnimation = !animated ? null : useGame((state) => state.idle);
   const walkAnimation = !animated ? null : useGame((state) => state.walk);

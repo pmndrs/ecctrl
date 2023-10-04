@@ -6,6 +6,7 @@
     "target": "ESNext",
     "verbatimModuleSyntax": true,
     "strict": true,
+    "isolatedModules": true,
     "noEmit": true,
     "skipLibCheck": true,
     "moduleResolution": "Bundler",
