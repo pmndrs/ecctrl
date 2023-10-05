@@ -1,12 +1,13 @@
 import { useGLTF, useAnimations } from "@react-three/drei";
 import { useEffect, useRef, Suspense } from "react";
 import * as THREE from "three";
-import useGame from "./stores/useGame";
+import { useGame, type AnimationSet } from "./stores/useGame";
+import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader";
 
-export function EcctrlAnimation(props) {
+export function EcctrlAnimation(props: EcctrlAnimationProps) {
   // Change the character src to yours
   const group = useRef();
-  const { animations } = useGLTF(props.characterURL);
+  const { animations } = useGLTF(props.characterURL) as GLTF;
   const { actions } = useAnimations(animations, group);
 
   /**
@@ -37,34 +38,43 @@ export function EcctrlAnimation(props) {
       curAnimation === props.animationSet.action3 ||
       curAnimation === props.animationSet.action4
     ) {
-      action.reset().fadeIn(0.2).setLoop(THREE.LoopOnce).play();
+      action
+        .reset()
+        .fadeIn(0.2)
+        .setLoop(THREE.LoopOnce, undefined as number)
+        .play();
       action.clampWhenFinished = true;
     } else {
       action.reset().fadeIn(0.2).play();
     }
 
     // When any action is clamp and finished reset animation
-    action._mixer.addEventListener("finished", () => resetAnimation());
+    (action as any)._mixer.addEventListener("finished", () => resetAnimation());
 
     return () => {
       // Fade out previous action
       action.fadeOut(0.2);
 
       // Clean up mixer listener, and empty the _listeners array
-      action._mixer.removeEventListener("finished", () => resetAnimation());
-      action._mixer._listeners = [];
+      (action as any)._mixer.removeEventListener("finished", () =>
+        resetAnimation()
+      );
+      (action as any)._mixer._listeners = [];
     };
   }, [curAnimation]);
 
   return (
     <Suspense fallback={null}>
-      <group
-        ref={group}
-        dispose={null}
-      >
+      <group ref={group} dispose={null}>
         {/* Replace character model here */}
         {props.children}
       </group>
     </Suspense>
   );
 }
+
+export type EcctrlAnimationProps = {
+  characterURL: string;
+  animationSet: AnimationSet;
+  children: React.ReactNode;
+};

@@ -8,14 +8,17 @@ import {
 import { useControls } from "leva";
 import { Suspense, useEffect, useRef, useMemo, useState } from "react";
 import * as THREE from "three";
-import useGame from "./stores/useGame";
-import { BallCollider } from "@react-three/rapier";
+import { useGame } from "./stores/useGame";
+import { BallCollider, RapierCollider } from "@react-three/rapier";
 import { useFrame } from "@react-three/fiber";
+import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader";
 
-export default function CharacterModel(props) {
+export default function CharacterModel(props: CharacterModelProps) {
   // Change the character src to yours
-  const group = useRef();
-  const { nodes, animations } = useGLTF("/Floating Character.glb");
+  const group = useRef<THREE.Group>();
+  const { nodes, animations } = useGLTF("/Floating Character.glb") as GLTF & {
+    nodes: any;
+  };
   const { actions } = useAnimations(animations, group);
   // gradientMapTexture for MeshToonMaterial
   const gradientMapTexture = useTexture("./textures/3.jpg");
@@ -26,16 +29,16 @@ export default function CharacterModel(props) {
   /**
    * Prepare hands ref for attack action
    */
-  const rightHandRef = useRef();
-  const rightHandColliderRef = useRef();
-  const leftHandRef = useRef();
-  const leftHandColliderRef = useRef();
+  const rightHandRef = useRef<THREE.Mesh>();
+  const rightHandColliderRef = useRef<RapierCollider>();
+  const leftHandRef = useRef<THREE.Mesh>();
+  const leftHandColliderRef = useRef<RapierCollider>();
   const rightHandPos = useMemo(() => new THREE.Vector3(), []);
   const leftHandPos = useMemo(() => new THREE.Vector3(), []);
   const bodyPos = useMemo(() => new THREE.Vector3(), []);
-  let rightHand = null;
-  let leftHand = null;
-  let mugModel = null;
+  let rightHand: THREE.Object3D = null;
+  let leftHand: THREE.Object3D = null;
+  let mugModel: THREE.Object3D = null;
 
   /**
    * Prepare punch effect sprite
@@ -159,7 +162,11 @@ export default function CharacterModel(props) {
       curAnimation === animationSet.action3 ||
       curAnimation === animationSet.action4
     ) {
-      action.reset().fadeIn(0.2).setLoop(THREE.LoopOnce).play();
+      action
+        .reset()
+        .fadeIn(0.2)
+        .setLoop(THREE.LoopOnce, undefined as number)
+        .play();
       action.clampWhenFinished = true;
       // Only show mug during cheer action
       if (curAnimation === animationSet.action3) {
@@ -173,15 +180,17 @@ export default function CharacterModel(props) {
     }
 
     // When any action is clamp and finished reset animation
-    action._mixer.addEventListener("finished", () => resetAnimation());
+    (action as any)._mixer.addEventListener("finished", () => resetAnimation());
 
     return () => {
       // Fade out previous action
       action.fadeOut(0.2);
 
       // Clean up mixer listener, and empty the _listeners array
-      action._mixer.removeEventListener("finished", () => resetAnimation());
-      action._mixer._listeners = [];
+      (action as any)._mixer.removeEventListener("finished", () =>
+        resetAnimation()
+      );
+      (action as any)._mixer._listeners = [];
     };
   }, [curAnimation]);
 
@@ -221,7 +230,12 @@ export default function CharacterModel(props) {
       <mesh ref={leftHandRef} />
       <BallCollider args={[0.1]} ref={leftHandColliderRef} />
       {/* Character model */}
-      <group ref={group} {...props} dispose={null} userData={{camExcludeCollision:true}}>
+      <group
+        ref={group}
+        {...props}
+        dispose={null}
+        userData={{ camExcludeCollision: true }}
+      >
         <group name="Scene" scale={0.8} position={[0, -0.6, 0]}>
           <group name="KayKit_Animated_Character">
             <skinnedMesh
@@ -251,8 +265,8 @@ export default function CharacterModel(props) {
         </group>
         <SpriteAnimator
           visible={punchEffectProps.visible}
-          scale={punchEffectProps.scale}
-          position={punchEffectProps.position}
+          scale={punchEffectProps.scale as any}
+          position={punchEffectProps.position as any}
           startFrame={punchEffectProps.startFrame}
           loop={true}
           onLoopEnd={() => {
@@ -271,6 +285,8 @@ export default function CharacterModel(props) {
     </Suspense>
   );
 }
+
+export type CharacterModelProps = JSX.IntrinsicElements["group"];
 
 // Change the character src to yours
 useGLTF.preload("/Floating Character.glb");

@@ -20,10 +20,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "devDependencies": {
+    "@types/react-dom": "^18.2.8",
     "@vitejs/plugin-react": "3.0",
+    "typescript": "^5.2.2",
     "vite": "^4.3.9"
   },
   "dependencies": {

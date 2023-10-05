@@ -1,13 +1,23 @@
 import { useKeyboardControls } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { RigidBody, CapsuleCollider, useRapier } from "@react-three/rapier";
-import { useEffect, useRef, useMemo } from "react";
+import {
+  RigidBody,
+  CapsuleCollider,
+  useRapier,
+  RapierRigidBody,
+} from "@react-three/rapier";
+import { useEffect, useRef, useMemo, type ReactNode } from "react";
 import * as THREE from "three";
 import { useControls } from "leva";
-import useFollowCam from "./hooks/useFollowCam";
-import useGame from "./stores/useGame";
+import { useFollowCam } from "./hooks/useFollowCam";
+import { useGame } from "./stores/useGame";
+import type {
+  Collider,
+  RayColliderToi,
+  Vector,
+} from "@dimforge/rapier3d-compat";
 
-export {EcctrlAnimation} from "./EcctrlAnimation"
+export { EcctrlAnimation } from "./EcctrlAnimation";
 
 export default function Ecctrl({
   children,
@@ -57,10 +67,9 @@ export default function Ecctrl({
   autoBalanceDampingOnY = 0.02,
   // Animation temporary setups
   animated = false,
-  ...props
-}) {
-  const characterRef = useRef();
-  const characterModelRef = useRef();
+}: EcctrlProps) {
+  const characterRef = useRef<RapierRigidBody>();
+  const characterModelRef = useRef<THREE.Group>();
 
   // Animation change functions
   const idleAnimation = !animated ? null : useGame((state) => state.idle);
@@ -345,7 +354,7 @@ export default function Ecctrl({
   /**
    * Initial light setup
    */
-  let dirLight = null;
+  let dirLight: THREE.DirectionalLight = null;
 
   /**
    * Follow camera initial setups from props
@@ -384,7 +393,7 @@ export default function Ecctrl({
   const characterMassForce = useMemo(() => new THREE.Vector3(), []);
   const rayOrigin = useMemo(() => new THREE.Vector3(), []);
   const rayCast = new rapier.Ray(rayOrigin, rayDir);
-  let rayHit = null;
+  let rayHit: RayColliderToi = null;
 
   /**Test shape ray */
   // const shape = new rapier.Capsule(0.2,0.1)
@@ -392,20 +401,25 @@ export default function Ecctrl({
   /**
    * Slope detection ray setup
    */
-  let slopeAngle = null;
-  let actualSlopeNormal = null;
-  let actualSlopeAngle = null;
+  let slopeAngle: number = null;
+  let actualSlopeNormal: Vector = null;
+  let actualSlopeAngle: number = null;
   const actualSlopeNormalVec = useMemo(() => new THREE.Vector3(), []);
   const floorNormal = useMemo(() => new THREE.Vector3(0, 1, 0), []);
-  const slopeRayOriginRef = useRef();
+  const slopeRayOriginRef = useRef<THREE.Mesh>();
   const slopeRayorigin = useMemo(() => new THREE.Vector3(), []);
   const slopeRayCast = new rapier.Ray(slopeRayorigin, slopeRayDir);
-  let slopeRayHit = null;
+  let slopeRayHit: RayColliderToi = null;
 
   /**
    * Character moving function
    */
-  const moveCharacter = (delta, run, slopeAngle, movingObjectVelocity) => {
+  const moveCharacter = (
+    _: number,
+    run: boolean,
+    slopeAngle: number,
+    movingObjectVelocity: THREE.Vector3
+  ) => {
     /**
      * Setup moving direction
      */
@@ -520,11 +534,15 @@ export default function Ecctrl({
     }
 
     // Move character at proper direction and impulse
-    characterRef.current.applyImpulseAtPoint(moveImpulse, {
-      x: currentPos.x,
-      y: currentPos.y + moveImpulsePointY,
-      z: currentPos.z,
-    });
+    characterRef.current.applyImpulseAtPoint(
+      moveImpulse,
+      {
+        x: currentPos.x,
+        y: currentPos.y + moveImpulsePointY,
+        z: currentPos.z,
+      },
+      false
+    );
   };
 
   /**
@@ -539,7 +557,7 @@ export default function Ecctrl({
       -autoBalanceSpringK * characterRef.current.rotation().z -
         characterRef.current.angvel().z * autoBalanceDampingC
     );
-    characterRef.current.applyTorqueImpulse(dragAngForce);
+    characterRef.current.applyTorqueImpulse(dragAngForce, false);
   };
 
   useEffect(() => {
@@ -549,7 +567,7 @@ export default function Ecctrl({
         (item) => {
           return item.type === "DirectionalLight";
         }
-      );
+      ) as THREE.DirectionalLight;
     }
 
     // Action 1 key subscribe for special animation
@@ -605,14 +623,15 @@ export default function Ecctrl({
     characterRef.current.setEnabledRotations(
       autoBalance ? true : false,
       autoBalance ? true : false,
-      autoBalance ? true : false
+      autoBalance ? true : false,
+      false
     );
   }, [autoBalance]);
 
   useFrame((state, delta) => {
     // Character current position
     if (characterRef.current) {
-      currentPos.copy(characterRef.current.translation());
+      currentPos.copy(characterRef.current.translation() as THREE.Vector3);
     }
 
     /**
@@ -664,7 +683,7 @@ export default function Ecctrl({
 
     // Character current velocity
     if (characterRef.current) {
-      currentVel.copy(characterRef.current.linvel());
+      currentVel.copy(characterRef.current.linvel() as THREE.Vector3);
     }
 
     // Jump impulse
@@ -680,7 +699,8 @@ export default function Ecctrl({
         jumpDirection
           .set(0, (run ? sprintJumpMult * jumpVel : jumpVel) * slopJumpMult, 0)
           .projectOnVector(actualSlopeNormalVec)
-          .add(jumpVelocityVec)
+          .add(jumpVelocityVec),
+        false
       );
       // Apply jump force downward to the standing platform
       characterMassForce.y *= jumpForceToGroundMult;
@@ -710,14 +730,15 @@ export default function Ecctrl({
     /**
      * Ray casting detect if on ground
      */
-    rayOrigin.addVectors(currentPos, rayOriginOffest);
+    rayOrigin.addVectors(currentPos, rayOriginOffest as THREE.Vector3);
     rayHit = world.castRay(
       rayCast,
       rayLength,
       false,
       null,
       null,
-      characterRef.current
+      // I have no idea
+      characterRef.current as unknown as Collider
     );
     /**Test shape ray */
     // rayHit = world.castShape(
@@ -765,11 +786,15 @@ export default function Ecctrl({
           // Calculate distance between character and moving object
           distanceFromCharacterToObject
             .copy(currentPos)
-            .sub(rayHit.collider.parent().translation());
+            .sub(rayHit.collider.parent().translation() as THREE.Vector3);
           // Moving object linear velocity
-          const movingObjectLinvel = rayHit.collider.parent().linvel();
+          const movingObjectLinvel = rayHit.collider
+            .parent()
+            .linvel() as THREE.Vector3;
           // Moving object angular velocity
-          const movingObjectAngvel = rayHit.collider.parent().angvel();
+          const movingObjectAngvel = rayHit.collider
+            .parent()
+            .angvel() as THREE.Vector3;
           // Combine object linear velocity and angular velocity to movingObjectVelocity
           movingObjectVelocity.set(
             movingObjectLinvel.x +
@@ -823,14 +848,16 @@ export default function Ecctrl({
       false,
       null,
       null,
-      characterRef.current
+      // Still no idea
+      characterRef.current as unknown as Collider
     );
 
     // Calculate slope angle
     if (slopeRayHit) {
       actualSlopeNormal = slopeRayHit.collider.castRayAndGetNormal(
         slopeRayCast,
-        slopeRayLength
+        slopeRayLength,
+        false
       )?.normal;
       if (actualSlopeNormal) {
         actualSlopeNormalVec?.set(
@@ -843,9 +870,12 @@ export default function Ecctrl({
     }
     if (slopeRayHit && rayHit && slopeRayHit.toi < floatingDis + 0.5) {
       if (canJump) {
-        slopeAngle = Math.atan(
-          (rayHit.toi - slopeRayHit.toi) / slopeRayOriginOffest
-        ).toFixed(2);
+        // Round the slope angle to 2 decimal places
+        slopeAngle = Number(
+          Math.atan(
+            (rayHit.toi - slopeRayHit.toi) / slopeRayOriginOffest
+          ).toFixed(2)
+        );
       } else {
         slopeAngle = null;
       }
@@ -862,7 +892,8 @@ export default function Ecctrl({
           springK * (floatingDis - rayHit.toi) -
           characterRef.current.linvel().y * dampingC;
         characterRef.current.applyImpulse(
-          springDirVec.set(0, floatingForce, 0)
+          springDirVec.set(0, floatingForce, 0),
+          false
         );
 
         // Apply opposite force to standing object (gravity g in rapier is 0.11 ?_?)
@@ -884,7 +915,7 @@ export default function Ecctrl({
           0,
           -currentVel.z * dragDampingC
         );
-        characterRef.current.applyImpulse(dragForce);
+        characterRef.current.applyImpulse(dragForce, false);
       }
       // on a moving object
       else {
@@ -893,7 +924,7 @@ export default function Ecctrl({
           0,
           (movingObjectVelocity.z - currentVel.z) * dragDampingC * 2
         );
-        characterRef.current.applyImpulse(dragForce);
+        characterRef.current.applyImpulse(dragForce, false);
       }
     }
 
@@ -966,3 +997,53 @@ export default function Ecctrl({
     </RigidBody>
   );
 }
+
+export type EcctrlProps = {
+  children?: ReactNode;
+  debug?: boolean;
+  capsuleHalfHeight?: number;
+  capsuleRadius?: number;
+  floatHeight?: number;
+  followLight?: boolean;
+  // Follow camera setups
+  camInitDis?: number;
+  camMaxDis?: number;
+  camMinDis?: number;
+  // Base control setups
+  maxVelLimit?: number;
+  turnVelMultiplier?: number;
+  turnSpeed?: number;
+  sprintMult?: number;
+  jumpVel?: number;
+  jumpForceToGroundMult?: number;
+  slopJumpMult?: number;
+  sprintJumpMult?: number;
+  airDragMultiplier?: number;
+  dragDampingC?: number;
+  accDeltaTime?: number;
+  rejectVelMult?: number;
+  moveImpulsePointY?: number;
+  camFollowMult?: number;
+  // Floating Ray setups
+  rayOriginOffest?: { x: number; y: number; z: number };
+  rayHitForgiveness?: number;
+  rayLength?: number;
+  rayDir?: { x: number; y: number; z: number };
+  floatingDis?: number;
+  springK?: number;
+  dampingC?: number;
+  // Slope Ray setups
+  showSlopeRayOrigin?: boolean;
+  slopeRayOriginOffest?: number;
+  slopeRayLength?: number;
+  slopeRayDir?: { x: number; y: number; z: number };
+  slopeUpExtraForce?: number;
+  slopeDownExtraForce?: number;
+  // AutoBalance Force setups
+  autoBalance?: boolean;
+  autoBalanceSpringK?: number;
+  autoBalanceDampingC?: number;
+  autoBalanceDampingOnY?: number;
+  // Animation temporary setups
+  animated?: boolean;
+};
