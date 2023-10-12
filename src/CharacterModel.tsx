@@ -234,7 +234,6 @@ export default function CharacterModel(props: CharacterModelProps) {
         ref={group}
         {...props}
         dispose={null}
-        userData={{ camExcludeCollision: true }}
       >
         <group name="Scene" scale={0.8} position={[0, -0.6, 0]}>
           <group name="KayKit_Animated_Character">

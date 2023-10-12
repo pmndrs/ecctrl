@@ -37,7 +37,7 @@ import Ecctrl, {EcctrlAnimation} from 'ecctrl'
 - Additionally, I've prepared a simple [Ecctrl CodeSandbox](https://codesandbox.io/s/ecctrl-w-o-animations-3k3zxt) for online testing and demostration.
 
 - Also, here is another [Ecctrl CodeSandbox](https://codesandbox.io/s/ecctrl-with-animations-nr4493) showcasing character animation functionality.
- 
+
 [![screenshot](example/PmndrsEcctrl.png)](https://codesandbox.io/s/ecctrl-w-o-animations-3k3zxt)
 
 Check out the [featurelog.md](/featurelog.md) for details on previous updates and features.
@@ -102,8 +102,7 @@ return (
         {/* Character Control */}
         <Ecctrl>
           {/* Replace your model here */}
-          {/* camExcludeCollision is used to prevent camera collision */}
-          <CharacterModel userData={{ camExcludeCollision: true }} />
+          <CharacterModel />
         </Ecctrl>
       </KeyboardControls>
       ...
@@ -169,7 +168,7 @@ props: {
 
 // Simply change the value by doing this
 <Ecctrl maxVelLimit={5} jumpVel={4}>
-  <CharacterModel userData={{ camExcludeCollision: true }} />
+  <CharacterModel />
 </Ecctrl>
 ```
 
@@ -211,8 +210,7 @@ return (
             animationSet={animationSet} // Must have property
           >
             {/* Replace your model here */}
-            {/* camExcludeCollision is used to prevent camera collision */}
-            <CharacterModel userData={{ camExcludeCollision: true }} />
+            <CharacterModel />
           </EcctrlAnimation>
         </Ecctrl>
       </KeyboardControls>
