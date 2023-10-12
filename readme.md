@@ -1,6 +1,6 @@
 # Ecctrl Floating Capsule Character Controller
 
-[![Video](https://img.youtube.com/vi/7h4ydBeryK8/0.jpg)](https://www.youtube.com/watch?v=7h4ydBeryK8)
+[![screenshot](example/FloatingCharacterControl.png)](https://character-control.vercel.app/)
 
 [Pmndrs/ecctrl](https://github.com/pmndrs/ecctrl) is a simple web based character controller build on [react-three-fiber](https://github.com/pmndrs/react-three-fiber) and [react-three-rapier](https://github.com/pmndrs/react-three-rapier). It provides a playground demo where you can experience the following features:
 
@@ -159,7 +159,7 @@ props: {
   // AutoBalance Force setups
   autoBalance: true, // Enable auto-balance
   autoBalanceSpringK: 0.3, // Auto-balance spring constant
-  autoBalanceDampingC: 0.02, // Auto-balance damping coefficient
+  autoBalanceDampingC: 0.03, // Auto-balance damping coefficient
   autoBalanceDampingOnY: 0.02, // Auto-balance damping on Y-axis
   // Animation temporary setups
   animated: false, // Enable animation

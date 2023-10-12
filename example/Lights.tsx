@@ -21,6 +21,7 @@ export default function Lights() {
         shadow-camera-right={50}
         shadow-camera-bottom={-50}
         shadow-camera-left={-50}
+        name="followLight"
         ref={directionalLightRef}
       />
       <ambientLight intensity={0.5} />
