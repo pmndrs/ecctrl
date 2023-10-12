@@ -1,7 +1,6 @@
 {
   "name": "ecctrl",
-  "private": true,
-  "version": "1.0.0",
+  "version": "1.0.30",
   "author": "Erdong Chen",
   "license": "MIT",
   "description": "A floating rigibody character controller for R3F",
@@ -17,27 +16,44 @@
     "type": "git",
     "url": "git+https://github.com/pmndrs/ecctrl.git"
   },
+  "files": [
+    "dist/*",
+    "src/*"
+  ],
   "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+  "types": "./dist/Ecctrl.d.ts",
+  "main": "./dist/Ecctrl.cjs",
+  "module": "./dist/Ecctrl.js",
+  "exports": {
+    "require": "./dist/Ecctrl.cjs",
+    "import": "./dist/Ecctrl.js"
   },
+  "sideEffects": false,
   "devDependencies": {
+    "@types/react": "^18.2.28",
     "@types/react-dom": "^18.2.8",
     "@vitejs/plugin-react": "^4.1.0",
+    "r3f-perf": "^7.1.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "three": "^0.153.0",
     "typescript": "^5.2.2",
     "vite": "^4.3.9"
   },
   "dependencies": {
-    "@react-three/drei": "^9.83.3",
-    "@react-three/fiber": "^8.13.3",
-    "@react-three/rapier": "^1.1.1",
+    "@react-three/drei": "^9",
+    "@react-three/rapier": "^1",
     "leva": "^0.9.34",
-    "r3f-perf": "^7.1.2",
-    "react": "18.2",
-    "react-dom": "18.2",
-    "three": "^0.153.0",
     "zustand": "^4.4.1"
+  },
+  "peerDependencies": {
+    "@react-three/fiber": "^8.13.3",
+    "react": ">=18",
+    "three": ">=0.133"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   }
 }

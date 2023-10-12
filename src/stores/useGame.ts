@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
-export const useGame = create(
-  subscribeWithSelector<State>((set) => {
+export const useGame = /* @__PURE__ */ create(
+  /* @__PURE__ */ subscribeWithSelector<State>((set) => {
     return {
       /**
        * Character animations state manegement
