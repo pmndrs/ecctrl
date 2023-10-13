@@ -1,16 +1,16 @@
 import { Grid, KeyboardControls } from "@react-three/drei";
 import { Perf } from "r3f-perf";
 import { Physics } from "@react-three/rapier";
-import Ecctrl from "./Ecctrl";
-import Floor from "../example/Floor";
-import Lights from "../example/Lights";
-import Steps from "../example/Steps";
-import Slopes from "../example/Slopes";
-import RoughPlane from "../example/RoughPlane";
-import RigidObjects from "../example/RigidObjects";
-import FloatingPlatform from "../example/FloatingPlatform";
-import DynamicPlatforms from "../example/DynamicPlatforms";
-import ShotCube from "../example/ShotCube";
+import Ecctrl from "../src/Ecctrl";
+import Floor from "./Floor";
+import Lights from "./Lights";
+import Steps from "./Steps";
+import Slopes from "./Slopes";
+import RoughPlane from "./RoughPlane";
+import RigidObjects from "./RigidObjects";
+import FloatingPlatform from "./FloatingPlatform";
+import DynamicPlatforms from "./DynamicPlatforms";
+import ShotCube from "./ShotCube";
 import { useControls } from "leva";
 import CharacterModel from "./CharacterModel";
 
