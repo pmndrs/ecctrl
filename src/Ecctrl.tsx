@@ -67,6 +67,8 @@ export default function Ecctrl({
   autoBalanceDampingOnY = 0.02,
   // Animation temporary setups
   animated = false,
+  // Position
+  position = { x: 0, y: 5, z: 0 },
 }: EcctrlProps) {
   const characterRef = useRef<RapierRigidBody>();
   const characterModelRef = useRef<THREE.Group>();
@@ -975,7 +977,7 @@ export default function Ecctrl({
   return (
     <RigidBody
       colliders={false}
-      position={[0, 5, 0]}
+      position={position}
       friction={-0.5}
       gravityScale={1.2}
       canSleep={false}
@@ -1051,4 +1053,6 @@ export type EcctrlProps = {
   autoBalanceDampingOnY?: number;
   // Animation temporary setups
   animated?: boolean;
+  // Position
+  position?: { x: number; y: number; z: number };
 };
