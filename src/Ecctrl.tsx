@@ -734,11 +734,14 @@ export default function Ecctrl({
     rayHit = world.castRay(
       rayCast,
       rayLength,
-      false,
+      true,
       null,
       null,
       // I have no idea
-      characterRef.current as unknown as Collider
+      characterRef.current as unknown as Collider,
+      null,
+      // this exclude with sensor collider
+      ((collider) => !collider.isSensor())
     );
     /**Test shape ray */
     // rayHit = world.castShape(
@@ -772,7 +775,6 @@ export default function Ecctrl({
           rayOrigin.y - rayHit.toi,
           rayOrigin.z
         );
-        // this deals with any invisible collider object (sensor or air wall)
         const rayHitObjectBodyType = rayHit.collider.parent().bodyType();
         const rayHitObjectBodyMass = rayHit.collider.parent().mass();
         // Body type 0 is rigid body, body type 1 is fixed body, body type 2 is kinematic body
@@ -845,11 +847,14 @@ export default function Ecctrl({
     slopeRayHit = world.castRay(
       slopeRayCast,
       slopeRayLength,
-      false,
+      true,
       null,
       null,
       // Still no idea
-      characterRef.current as unknown as Collider
+      characterRef.current as unknown as Collider,
+      null,
+      // this exclude with sensor collider
+      ((collider) => !collider.isSensor())
     );
 
     // Calculate slope angle
