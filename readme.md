@@ -121,11 +121,13 @@ EcctrlProps: {
   capsuleHalfHeight: 0.35, // Half-height of the character capsule
   capsuleRadius: 0.3, // Radius of the character capsule
   floatHeight: 0.3, // Height of the character when floating
+  characterInitDir: 0, // Character initial facing direction (in rad)
   followLight: false, // Enable follow light mode
   // Follow camera setups
   camInitDis: -5, // Initial camera distance
   camMaxDis: -7, // Maximum camera distance
   camMinDis: -0.7, // Minimum camera distance
+  camInitDir: 0, // Camera initial position direction (in rad)
   // Base control setups
   maxVelLimit: 2.5, // Maximum velocity limit
   turnVelMultiplier: 0.2, // Turn velocity multiplier
@@ -152,7 +154,7 @@ EcctrlProps: {
   // Slope Ray setups
   showSlopeRayOrigin: false, // Show slope ray origin
   slopeMaxAngle = 1, // in rad, the max walkable slope angle
-  slopeRayOriginOffest: capsuleRadius - 0.02, // Slope ray origin offset
+  slopeRayOriginOffest: capsuleRadius - 0.03, // Slope ray origin offset
   slopeRayLength: capsuleRadius + 3, // Slope ray length
   slopeRayDir: { x: 0, y: -1, z: 0 }, // Slope ray direction
   slopeUpExtraForce: 0.1, // Slope up extra force
