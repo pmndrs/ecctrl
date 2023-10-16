@@ -26,11 +26,13 @@ export default function Ecctrl({
   capsuleHalfHeight = 0.35,
   capsuleRadius = 0.3,
   floatHeight = 0.3,
+  characterInitDir = 0, // in rad
   followLight = false,
   // Follow camera setups
   camInitDis = -5,
   camMaxDis = -7,
   camMinDis = -0.7,
+  camInitDir = 0, // in rad
   // Base control setups
   maxVelLimit = 2.5,
   turnVelMultiplier = 0.2,
@@ -57,7 +59,7 @@ export default function Ecctrl({
   // Slope Ray setups
   showSlopeRayOrigin = false,
   slopeMaxAngle = 1, // in rad
-  slopeRayOriginOffest = capsuleRadius - 0.02,
+  slopeRayOriginOffest = capsuleRadius - 0.03,
   slopeRayLength = capsuleRadius + 3,
   slopeRayDir = { x: 0, y: -1, z: 0 },
   slopeUpExtraForce = 0.1,
@@ -639,6 +641,13 @@ export default function Ecctrl({
     );
   }, [autoBalance]);
 
+  useEffect(() => {
+    // Initialize character facing direction
+    modelEuler.y = characterInitDir
+    // Initialize camera facing direction
+    pivot.rotation.y = camInitDir
+  }, [])
+
   useFrame((state, delta) => {
     // Character current position
     if (characterRef.current) {
@@ -1020,11 +1029,13 @@ export interface EcctrlProps extends RigidBodyProps {
   capsuleHalfHeight?: number;
   capsuleRadius?: number;
   floatHeight?: number;
+  characterInitDir?: number;
   followLight?: boolean;
   // Follow camera setups
   camInitDis?: number;
   camMaxDis?: number;
   camMinDis?: number;
+  camInitDir?: number;
   // Base control setups
   maxVelLimit?: number;
   turnVelMultiplier?: number;
