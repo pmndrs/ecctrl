@@ -54,11 +54,11 @@ Download [Node.js](https://nodejs.org/en/download). Run this followed commands:
 # Install dependencies (only the first time)
 npm install
 
-# Run the local server at localhost:8080
+# Run the local server at localhost:5173
 npm run dev
 
-# Build for production in the dist/ directory
-npm run build
+# Build for production in the example/exampleDist/ directory
+vite build -c vercelVite.config.js
 ```
 
 ## How To Use
@@ -115,8 +115,8 @@ Here are all the default properties you can play with for `<Ecctrl>`:
 
 ```js
 // Default properties for Ecctrl
-props: {
-  children,
+EcctrlProps: {
+  children, // ReactNode
   debug: false, // Enable debug mode (require leva package)
   capsuleHalfHeight: 0.35, // Half-height of the character capsule
   capsuleRadius: 0.3, // Radius of the character capsule
@@ -151,7 +151,8 @@ props: {
   dampingC: 0.08, // Damping coefficient
   // Slope Ray setups
   showSlopeRayOrigin: false, // Show slope ray origin
-  slopeRayOriginOffest: capsuleRadius, // Slope ray origin offset
+  slopeMaxAngle = 1, // in rad, the max walkable slope angle
+  slopeRayOriginOffest: capsuleRadius - 0.02, // Slope ray origin offset
   slopeRayLength: capsuleRadius + 3, // Slope ray length
   slopeRayDir: { x: 0, y: -1, z: 0 }, // Slope ray direction
   slopeUpExtraForce: 0.1, // Slope up extra force
@@ -163,11 +164,14 @@ props: {
   autoBalanceDampingOnY: 0.02, // Auto-balance damping on Y-axis
   // Animation temporary setups
   animated: false, // Enable animation
-  ...props,
+  // Other rigibody props from parent
+  // Rigidbody props can be used here,
+  // such as position, friction, gravityScale, etc.
+  ...props
 }
 
 // Simply change the value by doing this
-<Ecctrl maxVelLimit={5} jumpVel={4}>
+<Ecctrl maxVelLimit={5} jumpVel={4} position={[0,10,0]}>
   <CharacterModel />
 </Ecctrl>
 ```

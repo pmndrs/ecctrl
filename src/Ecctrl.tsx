@@ -5,6 +5,7 @@ import {
   CapsuleCollider,
   useRapier,
   RapierRigidBody,
+  type RigidBodyProps,
 } from "@react-three/rapier";
 import { useEffect, useRef, useMemo, type ReactNode } from "react";
 import * as THREE from "three";
@@ -55,7 +56,8 @@ export default function Ecctrl({
   dampingC = 0.08,
   // Slope Ray setups
   showSlopeRayOrigin = false,
-  slopeRayOriginOffest = capsuleRadius,
+  slopeMaxAngle = 1, // in rad
+  slopeRayOriginOffest = capsuleRadius - 0.02,
   slopeRayLength = capsuleRadius + 3,
   slopeRayDir = { x: 0, y: -1, z: 0 },
   slopeUpExtraForce = 0.1,
@@ -67,6 +69,8 @@ export default function Ecctrl({
   autoBalanceDampingOnY = 0.02,
   // Animation temporary setups
   animated = false,
+  // Other rigibody props from parent
+  ...props
 }: EcctrlProps) {
   const characterRef = useRef<RapierRigidBody>();
   const characterModelRef = useRef<THREE.Group>();
@@ -260,6 +264,12 @@ export default function Ecctrl({
       "Slope Ray",
       {
         showSlopeRayOrigin: false,
+        slopeMaxAngle: {
+          value: slopeMaxAngle,
+          min: 0,
+          max: 1.57,
+          step: 0.01
+        },
         slopeRayOriginOffest: {
           value: capsuleRadius,
           min: 0,
@@ -290,6 +300,7 @@ export default function Ecctrl({
     );
     // Apply debug values
     showSlopeRayOrigin = slopeRayDebug.showSlopeRayOrigin;
+    slopeMaxAngle = slopeRayDebug.slopeMaxAngle;
     slopeRayLength = slopeRayDebug.slopeRayLength;
     slopeRayDir = slopeRayDebug.slopeRayDir;
     slopeUpExtraForce = slopeRayDebug.slopeUpExtraForce;
@@ -423,14 +434,14 @@ export default function Ecctrl({
     /**
      * Setup moving direction
      */
-    // Only apply slope extra force when slope angle is between 0.2-1, actualSlopeAngle < 1
+    // Only apply slope extra force when slope angle is between 0.2 and slopeMaxAngle, actualSlopeAngle < slopeMaxAngle
     if (
-      actualSlopeAngle < 1 &&
+      actualSlopeAngle < slopeMaxAngle &&
       Math.abs(slopeAngle) > 0.2 &&
-      Math.abs(slopeAngle) < 1
+      Math.abs(slopeAngle) < slopeMaxAngle
     ) {
       movingDirection.set(0, Math.sin(slopeAngle), Math.cos(slopeAngle));
-    } else if (actualSlopeAngle >= 1) {
+    } else if (actualSlopeAngle >= slopeMaxAngle) {
       movingDirection.set(
         0,
         Math.sin(slopeAngle) > 0 ? 0 : Math.sin(slopeAngle),
@@ -757,7 +768,7 @@ export default function Ecctrl({
     // );
 
     if (rayHit && rayHit.toi < floatingDis + rayHitForgiveness) {
-      if (slopeRayHit && actualSlopeAngle < 1) {
+      if (slopeRayHit && actualSlopeAngle < slopeMaxAngle) {
         canJump = true;
       }
     } else {
@@ -778,7 +789,7 @@ export default function Ecctrl({
         const rayHitObjectBodyType = rayHit.collider.parent().bodyType();
         const rayHitObjectBodyMass = rayHit.collider.parent().mass();
         // Body type 0 is rigid body, body type 1 is fixed body, body type 2 is kinematic body
-        // And iff it stands on big mass object (>0.5)
+        // And if it stands on big mass object (>0.5)
         if (
           (rayHitObjectBodyType === 0 || rayHitObjectBodyType === 2) &&
           rayHitObjectBodyMass > 0.5
@@ -975,11 +986,11 @@ export default function Ecctrl({
   return (
     <RigidBody
       colliders={false}
-      position={[0, 5, 0]}
-      friction={-0.5}
-      gravityScale={1.2}
       canSleep={false}
       ref={characterRef}
+      position={props.position || [0, 5, 0]}
+      friction={props.friction || -0.5}
+      {...props}
     >
       <CapsuleCollider args={[capsuleHalfHeight, capsuleRadius]} />
       <group ref={characterModelRef} userData={{ camExcludeCollision: true }}>
@@ -1003,7 +1014,7 @@ export default function Ecctrl({
   );
 }
 
-export type EcctrlProps = {
+export interface EcctrlProps extends RigidBodyProps {
   children?: ReactNode;
   debug?: boolean;
   capsuleHalfHeight?: number;
@@ -1039,6 +1050,7 @@ export type EcctrlProps = {
   dampingC?: number;
   // Slope Ray setups
   showSlopeRayOrigin?: boolean;
+  slopeMaxAngle?: number;
   slopeRayOriginOffest?: number;
   slopeRayLength?: number;
   slopeRayDir?: { x: number; y: number; z: number };
@@ -1051,4 +1063,6 @@ export type EcctrlProps = {
   autoBalanceDampingOnY?: number;
   // Animation temporary setups
   animated?: boolean;
+  // Other rigibody props from parent
+  props?: RigidBodyProps;
 };
