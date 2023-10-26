@@ -1,13 +1,14 @@
 import { useKeyboardControls } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import {
+  quat,
   RigidBody,
   CapsuleCollider,
   useRapier,
   RapierRigidBody,
   type RigidBodyProps,
 } from "@react-three/rapier";
-import { useEffect, useRef, useMemo, type ReactNode } from "react";
+import { useEffect, useRef, useMemo, type ReactNode, forwardRef } from "react";
 import * as THREE from "three";
 import { useControls } from "leva";
 import { useFollowCam } from "./hooks/useFollowCam";
@@ -20,7 +21,7 @@ import type {
 
 export { EcctrlAnimation } from "./EcctrlAnimation";
 
-export default function Ecctrl({
+const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   children,
   debug = false,
   capsuleHalfHeight = 0.35,
@@ -68,14 +69,27 @@ export default function Ecctrl({
   autoBalance = true,
   autoBalanceSpringK = 0.3,
   autoBalanceDampingC = 0.03,
+  autoBalanceSpringOnY = 0.3,
   autoBalanceDampingOnY = 0.02,
   // Animation temporary setups
   animated = false,
   // Other rigibody props from parent
   ...props
-}: EcctrlProps) {
-  const characterRef = useRef<RapierRigidBody>();
+}: EcctrlProps, ref) => {
+  const characterRef = ref || useRef<RapierRigidBody>()
   const characterModelRef = useRef<THREE.Group>();
+
+  /** 
+   * Body collider setup
+   */
+  const modelFacingVec = useMemo(() => new THREE.Vector3(), []);
+  const bodyFacingVec = useMemo(() => new THREE.Vector3(), []);
+  const bodyBalanceVec = useMemo(() => new THREE.Vector3(), []);
+  const bodyBalanceVecOnX = useMemo(() => new THREE.Vector3(), []);
+  const bodyFacingVecOnY = useMemo(() => new THREE.Vector3(), []);
+  const bodyBalanceVecOnZ = useMemo(() => new THREE.Vector3(), []);
+  const vectorY = useMemo(() => new THREE.Vector3(0, 1, 0), []);
+  const vectorZ = useMemo(() => new THREE.Vector3(0, 0, 1), []);
 
   // Animation change functions
   const idleAnimation = !animated ? null : useGame((state) => state.idle);
@@ -327,6 +341,12 @@ export default function Ecctrl({
           max: 0.1,
           step: 0.001,
         },
+        autoBalanceSpringOnY: {
+          value: autoBalanceSpringOnY,
+          min: 0,
+          max: 5,
+          step: 0.01,
+        },
         autoBalanceDampingOnY: {
           value: autoBalanceDampingOnY,
           min: 0,
@@ -340,6 +360,7 @@ export default function Ecctrl({
     autoBalance = autoBalanceForceDebug.autoBalance;
     autoBalanceSpringK = autoBalanceForceDebug.autoBalanceSpringK;
     autoBalanceDampingC = autoBalanceForceDebug.autoBalanceDampingC;
+    autoBalanceSpringOnY = autoBalanceForceDebug.autoBalanceSpringOnY;
     autoBalanceDampingOnY = autoBalanceForceDebug.autoBalanceDampingOnY;
   }
 
@@ -562,15 +583,32 @@ export default function Ecctrl({
    * Character auto balance function
    */
   const autoBalanceCharacter = () => {
+    bodyFacingVec.set(0, 0, 1).applyQuaternion(quat(characterRef.current.rotation()))
+    bodyBalanceVec.set(0, 1, 0).applyQuaternion(quat(characterRef.current.rotation()))
+
+    bodyBalanceVecOnX.set(0, bodyBalanceVec.y, bodyBalanceVec.z)
+    bodyFacingVecOnY.set(bodyFacingVec.x, 0, bodyFacingVec.z)
+    bodyBalanceVecOnZ.set(bodyBalanceVec.x, bodyBalanceVec.y, 0)
+
+    characterModelRef.current.getWorldDirection(modelFacingVec)
+    const crossVecOnX = vectorY.clone().cross(bodyBalanceVecOnX);
+    const crossVecOnY = vectorZ.clone().cross(bodyFacingVecOnY);
+    const crossVecOnZ = vectorY.clone().cross(bodyBalanceVecOnZ);
+
     dragAngForce.set(
-      -autoBalanceSpringK * characterRef.current.rotation().x -
-      characterRef.current.angvel().x * autoBalanceDampingC,
-      -autoBalanceSpringK * characterRef.current.rotation().y -
-      characterRef.current.angvel().y * autoBalanceDampingOnY,
-      -autoBalanceSpringK * characterRef.current.rotation().z -
-      characterRef.current.angvel().z * autoBalanceDampingC
+      (crossVecOnX.x < 0 ? 1 : -1) *
+      autoBalanceSpringK * (bodyBalanceVecOnX.angleTo(vectorY))
+      - characterRef.current.angvel().x * autoBalanceDampingC,
+      (crossVecOnY.y < 0 ? 1 : -1) *
+      autoBalanceSpringOnY * (bodyFacingVecOnY.angleTo(vectorZ))
+      - characterRef.current.angvel().y * autoBalanceDampingOnY,
+      (crossVecOnZ.z < 0 ? 1 : -1) *
+      autoBalanceSpringK * (bodyBalanceVecOnZ.angleTo(vectorY))
+      - characterRef.current.angvel().z * autoBalanceDampingC,
     );
-    characterRef.current.applyTorqueImpulse(dragAngForce, false);
+
+    // Apply balance torque impulse
+    characterRef.current.applyTorqueImpulse(dragAngForce, false)
   };
 
   useEffect(() => {
@@ -1021,7 +1059,9 @@ export default function Ecctrl({
       </group>
     </RigidBody>
   );
-}
+})
+
+export default Ecctrl
 
 export interface EcctrlProps extends RigidBodyProps {
   children?: ReactNode;
@@ -1071,6 +1111,7 @@ export interface EcctrlProps extends RigidBodyProps {
   autoBalance?: boolean;
   autoBalanceSpringK?: number;
   autoBalanceDampingC?: number;
+  autoBalanceSpringOnY?: number;
   autoBalanceDampingOnY?: number;
   // Animation temporary setups
   animated?: boolean;
