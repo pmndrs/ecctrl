@@ -8,7 +8,7 @@ import {
   RapierRigidBody,
   type RigidBodyProps,
 } from "@react-three/rapier";
-import { useEffect, useRef, useMemo, type ReactNode, forwardRef } from "react";
+import { useEffect, useRef, useMemo, type ReactNode, forwardRef, type RefObject } from "react";
 import * as THREE from "three";
 import { useControls } from "leva";
 import { useFollowCam } from "./hooks/useFollowCam";
@@ -76,7 +76,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   // Other rigibody props from parent
   ...props
 }: EcctrlProps, ref) => {
-  const characterRef = ref || useRef<RapierRigidBody>()
+  const characterRef = ref as RefObject<RapierRigidBody> || useRef<RapierRigidBody>()
   const characterModelRef = useRef<THREE.Group>();
 
   /** 
