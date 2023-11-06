@@ -577,7 +577,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
         y: currentPos.y + moveImpulsePointY,
         z: currentPos.z,
       },
-      false
+      true
     );
   };
 
@@ -760,7 +760,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
           .set(0, (run ? sprintJumpMult * jumpVel : jumpVel) * slopJumpMult, 0)
           .projectOnVector(actualSlopeNormalVec)
           .add(jumpVelocityVec),
-        false
+        true
       );
       // Apply jump force downward to the standing platform
       characterMassForce.y *= jumpForceToGroundMult;
@@ -989,7 +989,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
           0,
           (movingObjectVelocity.z - currentVel.z) * dragDampingC * 2
         );
-        characterRef.current.applyImpulse(dragForce, false);
+        characterRef.current.applyImpulse(dragForce, true);
       }
     }
 
@@ -1035,7 +1035,6 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   return (
     <RigidBody
       colliders={false}
-      canSleep={false}
       ref={characterRef}
       position={props.position || [0, 5, 0]}
       friction={props.friction || -0.5}
