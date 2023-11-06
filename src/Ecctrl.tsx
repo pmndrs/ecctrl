@@ -34,6 +34,8 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   camMaxDis = -7,
   camMinDis = -0.7,
   camInitDir = 0, // in rad
+  // Follow light setups
+  followLightPos = { x: 20, y: 30, z: 10 },
   // Base control setups
   maxVelLimit = 2.5,
   turnVelMultiplier = 0.2,
@@ -696,9 +698,9 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
      * Apply character position to directional light
      */
     if (followLight && dirLight) {
-      dirLight.position.x = currentPos.x + 20;
-      dirLight.position.y = currentPos.y + 30;
-      dirLight.position.z = currentPos.z + 10;
+      dirLight.position.x = currentPos.x + followLightPos.x;
+      dirLight.position.y = currentPos.y + followLightPos.y;
+      dirLight.position.z = currentPos.z + followLightPos.z;
       dirLight.target = characterModelRef.current;
     }
 
@@ -1076,6 +1078,8 @@ export interface EcctrlProps extends RigidBodyProps {
   camMaxDis?: number;
   camMinDis?: number;
   camInitDir?: number;
+  // Follow light setups
+  followLightPos?: { x: number, y: number, z: number },
   // Base control setups
   maxVelLimit?: number;
   turnVelMultiplier?: number;

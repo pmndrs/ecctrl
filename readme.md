@@ -122,12 +122,14 @@ EcctrlProps: {
   capsuleRadius: 0.3, // Radius of the character capsule
   floatHeight: 0.3, // Height of the character when floating
   characterInitDir: 0, // Character initial facing direction (in rad)
-  followLight: false, // Enable follow light mode
+  followLight: false, // Enable follow light mode (name your light "followLight" before turn this on)
   // Follow camera setups
   camInitDis: -5, // Initial camera distance
   camMaxDis: -7, // Maximum camera distance
   camMinDis: -0.7, // Minimum camera distance
   camInitDir: 0, // Camera initial position direction (in rad)
+   // Follow light setups
+  followLightPos: { x: 20, y: 30, z: 10 }, // Follow light position
   // Base control setups
   maxVelLimit: 2.5, // Maximum velocity limit
   turnVelMultiplier: 0.2, // Turn velocity multiplier
