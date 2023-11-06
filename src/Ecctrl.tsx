@@ -707,6 +707,9 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
      */
     const { forward, backward, leftward, rightward, jump, run } = getKeys();
 
+    if ((forward || backward || leftward || rightward || jump) && characterRef.current.isSleeping()) {
+      characterRef.current.wakeUp()
+    }
     // Getting moving directions
     if (forward) {
       // Apply camera rotation to character model
@@ -1030,10 +1033,23 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     }
   });
 
+  useEffect(() => {
+    document.addEventListener("visibilitychange", () => {
+      // Handle page visibility to determine if character should sleep or wake up
+      document.visibilityState === "visible" && characterRef.current.isSleeping() ?
+        characterRef.current.wakeUp():
+        characterRef.current.sleep();
+      }
+  );
+  
+    return () => {
+      document.removeEventListener("visibilitychange", () => {});
+    };
+  }, []);
+
   return (
     <RigidBody
       colliders={false}
-      canSleep={false}
       ref={characterRef}
       position={props.position || [0, 5, 0]}
       friction={props.friction || -0.5}
