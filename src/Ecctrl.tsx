@@ -101,9 +101,6 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   const jumpIdleAnimation = !animated
     ? null
     : useGame((state) => state.jumpIdle);
-  const jumpLandAnimation = !animated
-    ? null
-    : useGame((state) => state.jumpLand);
   const fallAnimation = !animated ? null : useGame((state) => state.fall);
   const action1Animation = !animated ? null : useGame((state) => state.action1);
   const action2Animation = !animated ? null : useGame((state) => state.action2);
@@ -404,7 +401,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   /**
    * Load camera pivot and character move preset
    */
-  const { pivot, followCam, cameraCollisionDetect } =
+  const { pivot, cameraCollisionDetect } =
     useFollowCam(cameraSetups);
   const pivotPosition = useMemo(() => new THREE.Vector3(), []);
   const modelEuler = useMemo(() => new THREE.Euler(), []);

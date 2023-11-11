@@ -2,12 +2,11 @@ import { useGLTF, useAnimations } from "@react-three/drei";
 import { useEffect, useRef, Suspense } from "react";
 import * as THREE from "three";
 import { useGame, type AnimationSet } from "./stores/useGame";
-import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader";
 
 export function EcctrlAnimation(props: EcctrlAnimationProps) {
   // Change the character src to yours
   const group = useRef();
-  const { animations } = useGLTF(props.characterURL) as GLTF;
+  const { animations } = useGLTF(props.characterURL);
   const { actions } = useAnimations(animations, group);
 
   /**
