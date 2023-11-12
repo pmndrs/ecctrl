@@ -34,6 +34,9 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   camMaxDis = -7,
   camMinDis = -0.7,
   camInitDir = 0, // in rad
+  camMoveSpeed = 1,
+  camZoomSpeed = 1,
+  camCollisionOffset = 0.7,
   // Follow light setups
   followLightPos = { x: 20, y: 30, z: 10 },
   // Base control setups
@@ -396,6 +399,9 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     camInitDis,
     camMaxDis,
     camMinDis,
+    camMoveSpeed,
+    camZoomSpeed,
+    camCollisionOffset
   };
 
   /**
@@ -1074,8 +1080,11 @@ export interface EcctrlProps extends RigidBodyProps {
   camMaxDis?: number;
   camMinDis?: number;
   camInitDir?: number;
+  camMoveSpeed?: number;
+  camZoomSpeed?: number;
+  camCollisionOffset?: number;
   // Follow light setups
-  followLightPos?: { x: number, y: number, z: number },
+  followLightPos?: { x: number, y: number, z: number };
   // Base control setups
   maxVelLimit?: number;
   turnVelMultiplier?: number;

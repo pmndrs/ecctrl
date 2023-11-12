@@ -128,6 +128,9 @@ EcctrlProps: {
   camMaxDis: -7, // Maximum camera distance
   camMinDis: -0.7, // Minimum camera distance
   camInitDir: 0, // Camera initial position direction (in rad)
+  camMoveSpeed = 1, // Camera moving speed multiplier
+  camZoomSpeed = 1, // Camera zooming speed multiplier
+  camCollisionOffset = 0.7, // Camera collision offset
    // Follow light setups
   followLightPos: { x: 20, y: 30, z: 10 }, // Follow light position
   // Base control setups
