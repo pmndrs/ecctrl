@@ -40,7 +40,7 @@ export default function Experience() {
 
   return (
     <>
-      <Perf position="top-left" />
+      <Perf position="top-left" minimal />
 
       <Grid
         args={[300, 300]}
@@ -93,7 +93,7 @@ export default function Experience() {
 
         {/* Shoting cubes */}
         <ShotCube />
-      </Physics>
+      </Physics >
     </>
   );
 }

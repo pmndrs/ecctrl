@@ -13,32 +13,30 @@
 
 ## New Features
 
-### (2023-10-02) Pmndrs/ecctrl & npm package:
+### (2023-11-18) EcctrlJoystick:
 
-- The character controller now integrated with [pmndrs/ecctrl](https://github.com/pmndrs/ecctrl)
+- Ecctrl now supports touch screen control!
 
-- You can easily install the npm package using the following command:
-
-```bash
-npm install ecctrl
-```
-
-To get started, import `Ecctrl` and `EcctrlAnimation`, then wrap your character model within `<Ecctrl>`:
+- You can easily import and use the built-in 3D joystick.
+  (note: place EcctrlJoystick outside of the canvas component)
 
 ```js
-import Ecctrl, {EcctrlAnimation} from 'ecctrl'
-...
-  <Ecctrl>
-    <CharacterModel/>
-  </Ecctrl>
-...
+import Ecctrl, {EcctrlJoystick} from 'ecctrl'
+//...
+  <EcctrlJoystick />
+  <Canvas>
+    {/* ... */}
+  </Canvas>
+//...
 ```
+
+- For more detailed settings, including lights, materials, and textures, please refer to the following sections.
 
 - Additionally, I've prepared a simple [Ecctrl CodeSandbox](https://codesandbox.io/s/ecctrl-w-o-animations-3k3zxt) for online testing and demostration.
 
 - Also, here is another [Ecctrl CodeSandbox](https://codesandbox.io/s/ecctrl-with-animations-nr4493) showcasing character animation functionality.
 
-[![screenshot](example/PmndrsEcctrl.png)](https://codesandbox.io/s/ecctrl-w-o-animations-3k3zxt)
+[![screenshot](example/ecctrlJoystick.png)](https://codesandbox.io/s/ecctrl-w-o-animations-3k3zxt)
 
 Check out the [featurelog.md](/featurelog.md) for details on previous updates and features.
 
@@ -127,10 +125,12 @@ EcctrlProps: {
   camInitDis: -5, // Initial camera distance
   camMaxDis: -7, // Maximum camera distance
   camMinDis: -0.7, // Minimum camera distance
-  camInitDir: 0, // Camera initial position direction (in rad)
-  camMoveSpeed = 1, // Camera moving speed multiplier
-  camZoomSpeed = 1, // Camera zooming speed multiplier
-  camCollisionOffset = 0.7, // Camera collision offset
+  camInitDir: { x: 0, y: 0, z: 0 }, // Camera initial rotation direction (in rad)
+  camTargetPos: { x: 0, y: 0, z: 0 }, // Camera target position
+  camMoveSpeed: 1, // Camera moving speed multiplier
+  camZoomSpeed: 1, // Camera zooming speed multiplier
+  camCollision: true, // Camera collision active/deactive
+  camCollisionOffset: 0.7, // Camera collision offset
    // Follow light setups
   followLightPos: { x: 20, y: 30, z: 10 }, // Follow light position
   // Base control setups
@@ -158,7 +158,7 @@ EcctrlProps: {
   dampingC: 0.08, // Damping coefficient
   // Slope Ray setups
   showSlopeRayOrigin: false, // Show slope ray origin
-  slopeMaxAngle = 1, // in rad, the max walkable slope angle
+  slopeMaxAngle: 1, // in rad, the max walkable slope angle
   slopeRayOriginOffest: capsuleRadius - 0.03, // Slope ray origin offset
   slopeRayLength: capsuleRadius + 3, // Slope ray length
   slopeRayDir: { x: 0, y: -1, z: 0 }, // Slope ray direction
@@ -304,6 +304,114 @@ const action2Animation = useGame((state) => state.action2);
 const action3Animation = useGame((state) => state.action3);
 const action4Animation = useGame((state) => state.action4);
 //const additionalAnimation = useGame((state) => state.triggerFunction);
+```
+
+### EcctrlJoystick and Touch buttons
+
+To get start, simply import `EcctrlJoystick` from `ecctrl`
+
+```js
+import { EcctrlJoystick } from "ecctrl";
+```
+
+Place `<EcctrlJoystick>` outside of your canvas component, and you're done!
+
+```js
+//...
+  <EcctrlJoystick />
+  <Canvas>
+    {/* ... */}
+  </Canvas>
+//...
+```
+
+You can also add lights or additional meshs like so (note: this will create components twice, once inside the joystick's scene, another inside the buttons' scene, so keep an eye on performance):
+
+```js
+//...
+  <EcctrlJoystick>
+    <ambientLight />
+    <mesh>
+      <boxGeometry args={[1,1,1]} />
+    </mesh>
+  </EcctrlJoystick>
+  <Canvas>
+    {/* ... */}
+  </Canvas>
+//...
+```
+
+Additionally, you can change components' material, geometry, or texture as you like:
+
+```js
+//...
+  <EcctrlJoystick
+    joystickBaseProps={{
+      receiveShadow: true,
+      material: new THREE.MeshStandardMaterial({ color: "grey" })
+    }}
+  />
+  <Canvas>
+    {/* ... */}
+  </Canvas>
+//...
+```
+
+Here are all the properties you can play with for `<EcctrlJoystick>`:
+
+```js
+EcctrlJoystickProps: {
+    // Joystick props
+    children?: ReactNode;
+    joystickPositionLeft?: number; // joystick div container position left
+    joystickPositionBottom?: number; // joystick div container position bottom
+    joystickHeightAndWidth?: number; // joystick div container height and width
+    joystickCamZoom?: number; // camera zoom level for the joystick
+    joystickCamPosition?: [x: number, y: number, z: number]; // camera position for the joystick
+    joystickBaseProps?: ThreeElements['mesh']; // custom properties for the joystick's base mesh
+    joystickStickProps?: ThreeElements['mesh']; // custom properties for the joystick's stick mesh
+    joystickHandleProps?: ThreeElements['mesh']; // custom properties for the joystick's handle mesh
+
+    // Touch buttons props
+    buttonNumber?: number; // Number of buttons (max 5)
+    buttonPositionRight?: number; // buttons div container position right
+    buttonPositionBottom?: number; // buttons div container position bottom
+    buttonHeightAndWidth?: number; // buttons div container height and width
+    buttonCamZoom?: number; // camera zoom level for the buttons
+    buttonCamPosition?: [x: number, y: number, z: number]; // camera position for the buttons
+    buttonGroup1Position?: [x: number, y: number, z: number]; // button 1 posiiton in 3D scene
+    buttonGroup2Position?: [x: number, y: number, z: number]; // button 2 posiiton in 3D scene
+    buttonGroup3Position?: [x: number, y: number, z: number]; // button 3 posiiton in 3D scene
+    buttonGroup4Position?: [x: number, y: number, z: number]; // button 4 posiiton in 3D scene
+    buttonGroup5Position?: [x: number, y: number, z: number]; // button 5 posiiton in 3D scene
+    buttonLargeBaseProps?: ThreeElements['mesh']; // custom properties for the buttons' large base mesh
+    buttonSmallBaseProps?: ThreeElements['mesh']; // custom properties for the buttons' small base mesh
+    buttonTop1Props?: ThreeElements['mesh']; // custom properties for the button 1 top mesh (large button)
+    buttonTop2Props?: ThreeElements['mesh']; // custom properties for the button 2 top mesh (large button)
+    buttonTop3Props?: ThreeElements['mesh']; // custom properties for the button 3 top mesh (small button)
+    buttonTop4Props?: ThreeElements['mesh']; // custom properties for the button 4 top mesh (small button)
+    buttonTop5Props?: ThreeElements['mesh']; // custom properties for the button 5 top mesh (small button)
+};
+```
+
+### Using your own joystick or buttons
+
+If you prefer to use your custom joystick or buttons, you can leverage the `useJoystickControls` hook from `ecctrl`. Import the hook and call the appropriate functions::
+
+```js
+import { useJoystickControls } from "ecctrl";
+//...
+const setJoystick = useJoystickControls((state) => state.setJoystick);
+const resetJoystick = useJoystickControls((state) => state.resetJoystick);
+const pressButton1 = useJoystickControls((state) => state.pressButton1);
+const releaseAllButtons = useJoystickControls(
+  (state) => state.releaseAllButtons
+);
+//...
+// call the proper fuctions 
+setJoystick(joystickDis, joystickAng, runState)
+// or
+pressButton1();
 ```
 
 ## Contributions

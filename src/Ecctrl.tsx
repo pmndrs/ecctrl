@@ -13,6 +13,7 @@ import * as THREE from "three";
 import { useControls } from "leva";
 import { useFollowCam } from "./hooks/useFollowCam";
 import { useGame } from "./stores/useGame";
+import { useJoystickControls } from "./stores/useJoystickControls";
 import type {
   Collider,
   RayColliderToi,
@@ -20,6 +21,10 @@ import type {
 } from "@dimforge/rapier3d-compat";
 
 export { EcctrlAnimation } from "./EcctrlAnimation";
+export { useFollowCam } from "./hooks/useFollowCam";
+export { useGame } from "./stores/useGame";
+export { EcctrlJoystick } from "../src/EcctrlJoystick";
+export { useJoystickControls } from "./stores/useJoystickControls";
 
 const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   children,
@@ -33,9 +38,11 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   camInitDis = -5,
   camMaxDis = -7,
   camMinDis = -0.7,
-  camInitDir = 0, // in rad
+  camInitDir = { x: 0, y: 0, z: 0 }, // in rad
+  camTargetPos = { x: 0, y: 0, z: 0 },
   camMoveSpeed = 1,
   camZoomSpeed = 1,
+  camCollision = true,
   camCollisionOffset = 0.7,
   // Follow light setups
   followLightPos = { x: 20, y: 30, z: 10 },
@@ -372,6 +379,11 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   const [subscribeKeys, getKeys] = useKeyboardControls();
   const { rapier, world } = useRapier();
 
+  /**
+   * Joystick controls setup
+   */
+  const getJoystickValues = useJoystickControls(state => state.getJoystickValues)
+
   // can jump setup
   let canJump = false;
 
@@ -666,11 +678,58 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
       }
     );
 
+    /**
+     * Joystick subscribe setup
+     */
+    // Subscribe button 2
+    const unSubPressButton2 = useJoystickControls.subscribe(
+      (state) => state.curButton2Pressed,
+      (value) => {
+        if (value) {
+          animated && action4Animation();
+        }
+      }
+    )
+
+    // Subscribe button 3
+    const unSubPressButton3 = useJoystickControls.subscribe(
+      (state) => state.curButton3Pressed,
+      (value) => {
+        if (value) {
+          animated && action2Animation();
+        }
+      }
+    )
+
+    // Subscribe button 4
+    const unSubPressButton4 = useJoystickControls.subscribe(
+      (state) => state.curButton4Pressed,
+      (value) => {
+        if (value) {
+          animated && action3Animation();
+        }
+      }
+    )
+
+    // Subscribe button 5
+    const unSubPressButton5 = useJoystickControls.subscribe(
+      (state) => state.curButton5Pressed,
+      (value) => {
+        if (value) {
+          animated && action1Animation();
+        }
+      }
+    )
+
     return () => {
       unSubscribeAction1();
       unSubscribeAction2();
       unSubscribeAction3();
       unSubscribeAction4();
+      unSubPressButton2();
+      unSubPressButton3();
+      unSubPressButton4();
+      unSubPressButton5();
     };
   });
 
@@ -688,7 +747,9 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     // Initialize character facing direction
     modelEuler.y = characterInitDir
     // Initialize camera facing direction
-    pivot.rotation.y = camInitDir
+    pivot.rotation.x = camInitDir.x
+    pivot.rotation.y = camInitDir.y
+    pivot.rotation.z = camInitDir.z
   }, [])
 
   useFrame((state, delta) => {
@@ -705,6 +766,23 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
       dirLight.position.y = currentPos.y + followLightPos.y;
       dirLight.position.z = currentPos.z + followLightPos.z;
       dirLight.target = characterModelRef.current;
+    }
+
+    /**
+     * Getting all joystick control values
+     */
+    const {
+      joystickDis,
+      joystickAng,
+      runState,
+      button1Pressed,
+    } = getJoystickValues()
+
+    // Move character to the moving direction (joystick controls)
+    if (joystickDis > 0) {
+      // Apply camera rotation to character model
+      modelEuler.y = pivot.rotation.y + (joystickAng - Math.PI / 2)
+      moveCharacter(delta, runState, slopeAngle, movingObjectVelocity);
     }
 
     /**
@@ -750,7 +828,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     }
 
     // Jump impulse
-    if (jump && canJump) {
+    if ((jump || button1Pressed) && canJump) {
       // characterRef.current.applyImpulse(jumpDirection.set(0, 0.5, 0), true);
       jumpVelocityVec.set(
         currentVel.x,
@@ -783,9 +861,9 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
      *  Camera movement
      */
     pivotPosition.set(
-      currentPos.x,
-      currentPos.y + (capsuleHalfHeight + capsuleRadius / 2),
-      currentPos.z
+      currentPos.x + camTargetPos.x,
+      currentPos.y + (camTargetPos.y || (capsuleHalfHeight + capsuleRadius / 2)),
+      currentPos.z + camTargetPos.z
     );
     pivot.position.lerp(pivotPosition, 1 - Math.exp(-camFollowMult * delta));
     state.camera.lookAt(pivot.position);
@@ -878,7 +956,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
           // Apply opposite drage force to the stading rigid body, body type 0
           // Character moving and unmoving should provide different drag force to the platform
           if (rayHitObjectBodyType === 0) {
-            if (!forward && !backward && !leftward && !rightward && canJump) {
+            if (!forward && !backward && !leftward && !rightward && canJump && joystickDis === 0) {
               movingObjectDragForce.set(
                 (currentVel.x - movingObjectVelocity.x) * dragDampingC,
                 0,
@@ -975,7 +1053,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     /**
      * Apply drag force if it's not moving
      */
-    if (!forward && !backward && !leftward && !rightward && canJump) {
+    if (!forward && !backward && !leftward && !rightward && canJump && joystickDis === 0) {
       // not on a moving object
       if (!isOnMovingObject) {
         dragForce.set(
@@ -1006,7 +1084,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     /**
      * Camera collision detect
      */
-    cameraCollisionDetect(delta);
+    camCollision && cameraCollisionDetect(delta);
 
     /**
      * Apply all the animations
@@ -1018,13 +1096,15 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
         !leftward &&
         !rightward &&
         !jump &&
+        !button1Pressed &&
+        joystickDis === 0 &&
         canJump
       ) {
         idleAnimation();
-      } else if (jump && canJump) {
+      } else if ((jump || button1Pressed) && canJump) {
         jumpAnimation();
-      } else if (canJump && (forward || backward || leftward || rightward)) {
-        run ? runAnimation() : walkAnimation();
+      } else if (canJump && (forward || backward || leftward || rightward || joystickDis > 0)) {
+        (run || runState) ? runAnimation() : walkAnimation();
       } else if (!canJump) {
         jumpIdleAnimation();
       }
@@ -1079,9 +1159,11 @@ export interface EcctrlProps extends RigidBodyProps {
   camInitDis?: number;
   camMaxDis?: number;
   camMinDis?: number;
-  camInitDir?: number;
+  camInitDir?: { x: number, y: number, z: number };
+  camTargetPos?: { x: number, y: number, z: number };
   camMoveSpeed?: number;
   camZoomSpeed?: number;
+  camCollision?: boolean;
   camCollisionOffset?: number;
   // Follow light setups
   followLightPos?: { x: number, y: number, z: number };

@@ -1,5 +1,30 @@
 ## New Features
 
+### (2023-11-18) EcctrlJoystick:
+
+- Ecctrl now supports touch screen control!
+
+- You can easily import and use the built-in 3D joystick.
+  (note: place EcctrlJoystick outside of the canvas component)
+
+```js
+import Ecctrl, {EcctrlJoystick} from 'ecctrl'
+//...
+  <EcctrlJoystick />
+  <Canvas>
+    {/* ... */}
+  </Canvas>
+//...
+```
+
+- For more detailed settings, including lights, materials, and textures, please refer to the following sections.
+
+- Additionally, I've prepared a simple [Ecctrl CodeSandbox](https://codesandbox.io/s/ecctrl-w-o-animations-3k3zxt) for online testing and demostration.
+
+- Also, here is another [Ecctrl CodeSandbox](https://codesandbox.io/s/ecctrl-with-animations-nr4493) showcasing character animation functionality.
+
+[![screenshot](example/ecctrlJoystick.png)](https://codesandbox.io/s/ecctrl-w-o-animations-3k3zxt)
+
 ### (2023-10-02) Pmndrs/ecctrl & npm package:
 
 - The character controller now integrated with [pmndrs/ecctrl](https://github.com/pmndrs/ecctrl)

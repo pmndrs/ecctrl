@@ -17,7 +17,8 @@ body,
 .controlKeys {
   position: absolute;
   width: 20rem;
-  left: 5%;
+  left: 50%;
+  margin-left: -10rem;
   bottom: 13%;
   user-select: none;
   -moz-user-select: none;
@@ -37,4 +38,22 @@ body,
 
 .title > a {
   color: rgb(79, 189, 249);
+}
+
+@media (max-width: 768px) {
+  .controlKeys {
+    display: none;
+  }
+  .title {
+    display: none;
+  }
+}
+
+@media (max-height: 450px) {
+  .controlKeys {
+    display: none;
+  }
+  .title {
+    display: none;
+  }
 }

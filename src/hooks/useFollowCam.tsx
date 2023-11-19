@@ -74,13 +74,6 @@ export const useFollowCam = function (props: UseFollowCamProps) {
     return false;
   };
 
-  // Touch start event
-  const onTouchStart = (e: TouchEvent) => {
-    // prevent swipe to navigate gesture
-    e.preventDefault();
-    e.stopImmediatePropagation();
-  }
-
   // Touch end event
   const onTouchEnd = (e: TouchEvent) => {
     previousTouch1 = null
@@ -89,6 +82,10 @@ export const useFollowCam = function (props: UseFollowCamProps) {
 
   // Touch move event
   const onTouchMove = (e: TouchEvent) => {
+    // prevent swipe to navigate gesture
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
     const touch1 = e.targetTouches[0];
     const touch2 = e.targetTouches[1];
 
@@ -213,9 +210,8 @@ export const useFollowCam = function (props: UseFollowCamProps) {
     document.addEventListener("mousemove", onDocumentMouseMove);
     document.addEventListener("mousewheel", onDocumentMouseWheel);
     // Touch event
-    document.addEventListener("touchstart", onTouchStart, { passive: false });
     document.addEventListener("touchend", onTouchEnd);
-    document.addEventListener("touchmove", onTouchMove);
+    document.addEventListener("touchmove", onTouchMove, { passive: false });
 
     return () => {
       document.removeEventListener("mousedown", () => { isMouseDown = true });
@@ -223,7 +219,6 @@ export const useFollowCam = function (props: UseFollowCamProps) {
       document.removeEventListener("mousemove", onDocumentMouseMove);
       document.removeEventListener("mousewheel", onDocumentMouseWheel);
       // Touch event
-      document.removeEventListener("touchstart", onTouchStart);
       document.removeEventListener("touchend", onTouchEnd);
       document.removeEventListener("touchmove", onTouchMove);
     };
