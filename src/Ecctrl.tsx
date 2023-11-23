@@ -8,7 +8,7 @@ import {
   RapierRigidBody,
   type RigidBodyProps,
 } from "@react-three/rapier";
-import { useEffect, useRef, useMemo, type ReactNode, forwardRef, type RefObject } from "react";
+import { useEffect, useRef, useMemo, type ReactNode, forwardRef, type RefObject, useCallback } from "react";
 import * as THREE from "three";
 import { useControls } from "leva";
 import { useFollowCam } from "./hooks/useFollowCam";
@@ -20,6 +20,27 @@ import type {
 } from "@dimforge/rapier3d-compat";
 
 export { EcctrlAnimation } from "./EcctrlAnimation";
+
+const DYNAMIC: number = 0;
+const FIXED: number = 1;
+
+// Retrieve current moving direction of the character
+const getMovingDirection = (forward: boolean,
+  backward: boolean,
+  leftward: boolean,
+  rightward: boolean,
+  pivot: THREE.Object3D)
+  :number | null => {
+    if (!forward && !backward && !leftward && !rightward) return null;
+    if (forward && leftward) return pivot.rotation.y + Math.PI / 4;
+    if (forward && rightward) return pivot.rotation.y - Math.PI / 4;
+    if (backward && leftward) return pivot.rotation.y - Math.PI / 4 + Math.PI;
+    if (backward && rightward) return pivot.rotation.y + Math.PI / 4 + Math.PI;
+    if (backward) return pivot.rotation.y + Math.PI;
+    if (leftward) return pivot.rotation.y + Math.PI / 2;
+    if (rightward) return pivot.rotation.y - Math.PI / 2;
+    if (forward) return pivot.rotation.y;
+};
 
 const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   children,
@@ -611,6 +632,13 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     characterRef.current.applyTorqueImpulse(dragAngForce, false)
   };
 
+  const setCharacterBodyType = useCallback(
+    (e: FocusEvent) => 
+      e.type === "blur" ?
+        characterRef.current.setBodyType(FIXED, false) :
+        characterRef.current.setBodyType(DYNAMIC, true)
+  , [])
+
   useEffect(() => {
     // Initialize directional light
     if (followLight) {
@@ -684,6 +712,14 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     modelEuler.y = characterInitDir
     // Initialize camera facing direction
     pivot.rotation.y = camInitDir
+
+    window.addEventListener("blur", setCharacterBodyType);
+    window.addEventListener("focus", setCharacterBodyType);
+    
+    return () => {
+      window.removeEventListener("blur", () => setCharacterBodyType);
+      window.removeEventListener("focus", () => setCharacterBodyType);
+    }
   }, [])
 
   useFrame((state, delta) => {
@@ -707,33 +743,9 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
      */
     const { forward, backward, leftward, rightward, jump, run } = getKeys();
 
-    // Getting moving directions
-    if (forward) {
-      // Apply camera rotation to character model
-      modelEuler.y = pivot.rotation.y;
-    } else if (backward) {
-      // Apply camera rotation to character model
-      modelEuler.y = pivot.rotation.y + Math.PI;
-    } else if (leftward) {
-      // Apply camera rotation to character model
-      modelEuler.y = pivot.rotation.y + Math.PI / 2;
-    } else if (rightward) {
-      // Apply camera rotation to character model
-      modelEuler.y = pivot.rotation.y - Math.PI / 2;
-    }
-    if (forward && leftward) {
-      // Apply camera rotation to character model
-      modelEuler.y = pivot.rotation.y + Math.PI / 4;
-    } else if (forward && rightward) {
-      // Apply camera rotation to character model
-      modelEuler.y = pivot.rotation.y - Math.PI / 4;
-    } else if (backward && leftward) {
-      // Apply camera rotation to character model
-      modelEuler.y = pivot.rotation.y - Math.PI / 4 + Math.PI;
-    } else if (backward && rightward) {
-      // Apply camera rotation to character model
-      modelEuler.y = pivot.rotation.y + Math.PI / 4 + Math.PI;
-    }
+    // Getting moving directions (IIFE)
+    modelEuler.y = ((movingDirection) => movingDirection === null ? modelEuler.y : movingDirection)
+    (getMovingDirection(forward, backward, leftward, rightward, pivot ))
 
     // Move character to the moving direction
     if (forward || backward || leftward || rightward)
