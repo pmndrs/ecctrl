@@ -26,6 +26,24 @@ export { useGame } from "./stores/useGame";
 export { EcctrlJoystick } from "../src/EcctrlJoystick";
 export { useJoystickControls } from "./stores/useJoystickControls";
 
+// Retrieve current moving direction of the character
+const getMovingDirection = (forward: boolean,
+  backward: boolean,
+  leftward: boolean,
+  rightward: boolean,
+  pivot: THREE.Object3D)
+  :number | null => {
+    if (!forward && !backward && !leftward && !rightward) return null;
+    if (forward && leftward) return pivot.rotation.y + Math.PI / 4;
+    if (forward && rightward) return pivot.rotation.y - Math.PI / 4;
+    if (backward && leftward) return pivot.rotation.y - Math.PI / 4 + Math.PI;
+    if (backward && rightward) return pivot.rotation.y + Math.PI / 4 + Math.PI;
+    if (backward) return pivot.rotation.y + Math.PI;
+    if (leftward) return pivot.rotation.y + Math.PI / 2;
+    if (rightward) return pivot.rotation.y - Math.PI / 2;
+    if (forward) return pivot.rotation.y;
+};
+
 const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   children,
   debug = false,
@@ -790,33 +808,9 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
      */
     const { forward, backward, leftward, rightward, jump, run } = getKeys();
 
-    // Getting moving directions
-    if (forward) {
-      // Apply camera rotation to character model
-      modelEuler.y = pivot.rotation.y;
-    } else if (backward) {
-      // Apply camera rotation to character model
-      modelEuler.y = pivot.rotation.y + Math.PI;
-    } else if (leftward) {
-      // Apply camera rotation to character model
-      modelEuler.y = pivot.rotation.y + Math.PI / 2;
-    } else if (rightward) {
-      // Apply camera rotation to character model
-      modelEuler.y = pivot.rotation.y - Math.PI / 2;
-    }
-    if (forward && leftward) {
-      // Apply camera rotation to character model
-      modelEuler.y = pivot.rotation.y + Math.PI / 4;
-    } else if (forward && rightward) {
-      // Apply camera rotation to character model
-      modelEuler.y = pivot.rotation.y - Math.PI / 4;
-    } else if (backward && leftward) {
-      // Apply camera rotation to character model
-      modelEuler.y = pivot.rotation.y - Math.PI / 4 + Math.PI;
-    } else if (backward && rightward) {
-      // Apply camera rotation to character model
-      modelEuler.y = pivot.rotation.y + Math.PI / 4 + Math.PI;
-    }
+    // Getting moving directions (IIFE)
+    modelEuler.y = ((movingDirection) => movingDirection === null ? modelEuler.y : movingDirection)
+    (getMovingDirection(forward, backward, leftward, rightward, pivot ))
 
     // Move character to the moving direction
     if (forward || backward || leftward || rightward)
