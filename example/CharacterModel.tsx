@@ -9,7 +9,7 @@ import { useControls } from "leva";
 import { Suspense, useEffect, useRef, useMemo, useState } from "react";
 import * as THREE from "three";
 import { useGame } from "../src/stores/useGame";
-import { BallCollider, RapierCollider } from "@react-three/rapier";
+import { BallCollider, RapierCollider, vec3 } from "@react-three/rapier";
 import { useFrame } from "@react-three/fiber";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader";
 
@@ -129,24 +129,21 @@ export default function CharacterModel(props: CharacterModelProps) {
   });
 
   useFrame(() => {
-    if (rightHand && leftHand) {
-      rightHand.getWorldPosition(rightHandPos);
-      leftHand.getWorldPosition(leftHandPos);
-      rightHandRef.current.parent.getWorldPosition(bodyPos);
-    }
+    if (curAnimation === animationSet.action4) {
+      if (rightHand && leftHand) {
+        rightHand.getWorldPosition(rightHandPos);
+        leftHand.getWorldPosition(leftHandPos);
+        rightHandRef.current.parent.getWorldPosition(bodyPos);
+      }
 
-    // Apply both hands position to hand colliders
-    if (rightHandColliderRef.current && leftHandColliderRef.current) {
-      rightHandRef.current.position.copy(rightHandPos).sub(bodyPos);
-      rightHandColliderRef.current.setTranslationWrtParent(
-        rightHandRef.current.position
-      );
-
-      leftHandRef.current.position.copy(leftHandPos).sub(bodyPos);
-      leftHandColliderRef.current.setTranslationWrtParent(
-        leftHandRef.current.position
-      );
-    }
+      // Apply both hands position to hand colliders
+      if (rightHandColliderRef.current && leftHandColliderRef.current) {
+        rightHandRef.current.position.copy(rightHandPos).sub(bodyPos);
+        rightHandColliderRef.current.setTranslationWrtParent(
+          rightHandRef.current.position
+        );
+      }
+    } 
   });
 
   useEffect(() => {
@@ -191,6 +188,13 @@ export default function CharacterModel(props: CharacterModelProps) {
         resetAnimation()
       );
       (action as any)._mixer._listeners = [];
+
+      // Move hand collider back to initial position after action
+      if (curAnimation===animationSet.action4) {
+        if (rightHandColliderRef.current) {
+          rightHandColliderRef.current.setTranslationWrtParent(vec3({ x: 0, y: 0, z: 0 }))
+        }
+      }
     };
   }, [curAnimation]);
 

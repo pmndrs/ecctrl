@@ -148,6 +148,8 @@ EcctrlProps: {
   rejectVelMult: 4, // Reject velocity multiplier
   moveImpulsePointY: 0.5, // Move impulse point Y offset
   camFollowMult: 11, // Camera follow speed multiplier
+  fallingGravityScale: 2.5, // Character is falling, apply higher gravity
+  fallingMaxVel: -20, // Limit character max falling velocity
   // Floating Ray setups
   rayOriginOffest: { x: 0, y: -capsuleHalfHeight, z: 0 }, // Ray origin offset
   rayHitForgiveness: 0.1, // Ray hit forgiveness

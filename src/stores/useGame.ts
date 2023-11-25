@@ -151,10 +151,10 @@ export type AnimationSet = {
   jumpLand: string;
   fall: string;
   // Currently support four additional animations
-  action1: string;
-  action2: string;
-  action3: string;
-  action4: string;
+  action1?: string;
+  action2?: string;
+  action3?: string;
+  action4?: string;
 };
 
 type State = {

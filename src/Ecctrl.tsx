@@ -79,6 +79,8 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   rejectVelMult = 4,
   moveImpulsePointY = 0.5,
   camFollowMult = 11,
+  fallingGravityScale = 2.5,
+  fallingMaxVel = -20,
   // Floating Ray setups
   rayOriginOffest = { x: 0, y: -capsuleHalfHeight, z: 0 },
   rayHitForgiveness = 0.1,
@@ -404,6 +406,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
 
   // can jump setup
   let canJump = false;
+  let isFalling = false;
 
   // on moving object state
   let isOnMovingObject = false;
@@ -646,6 +649,13 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     characterRef.current.applyTorqueImpulse(dragAngForce, false)
   };
 
+  /**
+   * Character sleep function
+   */
+  const sleepCharacter = () => {
+    characterRef.current.sleep()
+  }
+
   useEffect(() => {
     // Initialize directional light
     if (followLight) {
@@ -768,6 +778,12 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     pivot.rotation.x = camInitDir.x
     pivot.rotation.y = camInitDir.y
     pivot.rotation.z = camInitDir.z
+
+    window.addEventListener("blur", sleepCharacter);
+
+    return () => {
+      window.removeEventListener("blur", sleepCharacter);
+    }
   }, [])
 
   useFrame((state, delta) => {
@@ -1069,6 +1085,21 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     }
 
     /**
+     * Detect character falling state
+     */
+    isFalling = (currentVel.y < 0 && !canJump) ? true : false
+
+    /**
+     * Apply larger gravity when falling
+     */
+    if (characterRef.current) {
+      characterRef.current.setGravityScale(
+        currentVel.y > fallingMaxVel ? (isFalling ? fallingGravityScale : 1) : 0,
+        true
+      )
+    }
+
+    /**
      * Apply auto balance force to the character
      */
     if (autoBalance && characterRef.current) {
@@ -1103,7 +1134,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
         jumpIdleAnimation();
       }
       // On high sky, play falling animation
-      if (rayHit == null && currentVel.y < 0) {
+      if (rayHit == null && isFalling) {
         fallAnimation();
       }
     }
@@ -1176,6 +1207,8 @@ export interface EcctrlProps extends RigidBodyProps {
   rejectVelMult?: number;
   moveImpulsePointY?: number;
   camFollowMult?: number;
+  fallingGravityScale?: number;
+  fallingMaxVel?: number;
   // Floating Ray setups
   rayOriginOffest?: { x: number; y: number; z: number };
   rayHitForgiveness?: number;
