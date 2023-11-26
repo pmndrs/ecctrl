@@ -32,16 +32,16 @@ const getMovingDirection = (forward: boolean,
   leftward: boolean,
   rightward: boolean,
   pivot: THREE.Object3D)
-  :number | null => {
-    if (!forward && !backward && !leftward && !rightward) return null;
-    if (forward && leftward) return pivot.rotation.y + Math.PI / 4;
-    if (forward && rightward) return pivot.rotation.y - Math.PI / 4;
-    if (backward && leftward) return pivot.rotation.y - Math.PI / 4 + Math.PI;
-    if (backward && rightward) return pivot.rotation.y + Math.PI / 4 + Math.PI;
-    if (backward) return pivot.rotation.y + Math.PI;
-    if (leftward) return pivot.rotation.y + Math.PI / 2;
-    if (rightward) return pivot.rotation.y - Math.PI / 2;
-    if (forward) return pivot.rotation.y;
+  : number | null => {
+  if (!forward && !backward && !leftward && !rightward) return null;
+  if (forward && leftward) return pivot.rotation.y + Math.PI / 4;
+  if (forward && rightward) return pivot.rotation.y - Math.PI / 4;
+  if (backward && leftward) return pivot.rotation.y - Math.PI / 4 + Math.PI;
+  if (backward && rightward) return pivot.rotation.y + Math.PI / 4 + Math.PI;
+  if (backward) return pivot.rotation.y + Math.PI;
+  if (leftward) return pivot.rotation.y + Math.PI / 2;
+  if (rightward) return pivot.rotation.y - Math.PI / 2;
+  if (forward) return pivot.rotation.y;
 };
 
 const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
@@ -407,6 +407,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   // can jump setup
   let canJump = false;
   let isFalling = false;
+  const initialGravityScale = useMemo(() => props.gravityScale || 1, [])
 
   // on moving object state
   let isOnMovingObject = false;
@@ -826,7 +827,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
 
     // Getting moving directions (IIFE)
     modelEuler.y = ((movingDirection) => movingDirection === null ? modelEuler.y : movingDirection)
-    (getMovingDirection(forward, backward, leftward, rightward, pivot ))
+      (getMovingDirection(forward, backward, leftward, rightward, pivot))
 
     // Move character to the moving direction
     if (forward || backward || leftward || rightward)
@@ -1093,10 +1094,13 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
      * Apply larger gravity when falling
      */
     if (characterRef.current) {
-      characterRef.current.setGravityScale(
-        currentVel.y > fallingMaxVel ? (isFalling ? fallingGravityScale : 1) : 0,
-        true
-      )
+      if (currentVel.y < fallingMaxVel && characterRef.current.gravityScale() !== 0) {
+        characterRef.current.setGravityScale(0, true)
+      } else if (isFalling && characterRef.current.gravityScale() !== fallingGravityScale) {
+        characterRef.current.setGravityScale(fallingGravityScale, true)
+      } else if (!isFalling && characterRef.current.gravityScale() !== initialGravityScale) {
+        characterRef.current.setGravityScale(initialGravityScale, true)
+      }
     }
 
     /**
