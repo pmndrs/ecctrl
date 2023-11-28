@@ -1152,7 +1152,10 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
       friction={props.friction || -0.5}
       {...props}
     >
-      <CapsuleCollider args={[capsuleHalfHeight, capsuleRadius]} />
+      <CapsuleCollider
+        name="character-capsule-collider"
+        args={[capsuleHalfHeight, capsuleRadius]}
+      />
       <group ref={characterModelRef} userData={{ camExcludeCollision: true }}>
         {/* This mesh is used for positioning the slope ray origin */}
         <mesh
