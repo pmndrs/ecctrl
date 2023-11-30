@@ -150,6 +150,7 @@ EcctrlProps: {
   camFollowMult: 11, // Camera follow speed multiplier
   fallingGravityScale: 2.5, // Character is falling, apply higher gravity
   fallingMaxVel: -20, // Limit character max falling velocity
+  wakeUpDelay: 200, // Wake up character delay time after window visibility change to visible (in ms)
   // Floating Ray setups
   rayOriginOffest: { x: 0, y: -capsuleHalfHeight, z: 0 }, // Ray origin offset
   rayHitForgiveness: 0.1, // Ray hit forgiveness
@@ -410,10 +411,23 @@ const releaseAllButtons = useJoystickControls(
   (state) => state.releaseAllButtons
 );
 //...
-// call the proper fuctions 
-setJoystick(joystickDis, joystickAng, runState)
+// call the proper fuctions
+setJoystick(joystickDis, joystickAng, runState);
 // or
 pressButton1();
+```
+
+### (Optional) First-person view setup
+
+If you would like to quickly set up a first-person mode, you can modify these props to achieve that:
+
+```js
+<Ecctrl
+  camInitDis={-0.01} // camera intial position
+  camMinDis={-0.01} // camera zoom in closest position
+  camFollowMult={100} // give any big number here, so the camera follows the character instantly
+  autoBalance={false} // turn off auto balance since it's not useful for the first-person view
+>
 ```
 
 ## Contributions

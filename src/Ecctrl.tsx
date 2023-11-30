@@ -81,6 +81,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   camFollowMult = 11,
   fallingGravityScale = 2.5,
   fallingMaxVel = -20,
+  wakeUpDelay = 200,
   // Floating Ray setups
   rayOriginOffest = { x: 0, y: -capsuleHalfHeight, z: 0 },
   rayHitForgiveness = 0.1,
@@ -407,7 +408,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   // can jump setup
   let canJump = false;
   let isFalling = false;
-  const initialGravityScale = useMemo(() => props.gravityScale || 1, [])
+  const initialGravityScale: number = useMemo(() => props.gravityScale || 1, [])
 
   // on moving object state
   let isOnMovingObject = false;
@@ -654,7 +655,13 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
    * Character sleep function
    */
   const sleepCharacter = () => {
-    characterRef.current.sleep()
+    if (document.visibilityState === "hidden") {
+      characterRef.current.sleep()
+    } else {
+      setTimeout(() => {
+        characterRef.current.wakeUp()
+      }, wakeUpDelay)
+    }
   }
 
   useEffect(() => {
@@ -780,10 +787,10 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     pivot.rotation.y = camInitDir.y
     pivot.rotation.z = camInitDir.z
 
-    window.addEventListener("blur", sleepCharacter);
+    window.addEventListener("visibilitychange", sleepCharacter);
 
     return () => {
-      window.removeEventListener("blur", sleepCharacter);
+      window.removeEventListener("visibilitychange", sleepCharacter);
     }
   }, [])
 
@@ -1216,6 +1223,7 @@ export interface EcctrlProps extends RigidBodyProps {
   camFollowMult?: number;
   fallingGravityScale?: number;
   fallingMaxVel?: number;
+  wakeUpDelay?: number;
   // Floating Ray setups
   rayOriginOffest?: { x: number; y: number; z: number };
   rayHitForgiveness?: number;
