@@ -207,7 +207,7 @@ const animationSet = {
   action1: "Wave",
   action2: "Dance",
   action3: "Cheer",
-  action4: "Attack(1h)",
+  action4: "Attack(1h)", // This is special action which can be trigger while walking or running
 };
 
 return (
@@ -253,7 +253,7 @@ const animationSet = {
   action1: "Wave",
   action2: "Dance",
   action3: "Cheer",
-  action4: "Attack(1h)",
+  action4: "Attack(1h)",// This is special action which can be trigger while walking or running
   //additinalAnimation: "additinalAnimationName",
 };
 ```
