@@ -7,6 +7,7 @@ import {
   useRapier,
   RapierRigidBody,
   type RigidBodyProps,
+  CylinderCollider,
 } from "@react-three/rapier";
 import { useEffect, useRef, useMemo, type ReactNode, forwardRef, type RefObject } from "react";
 import * as THREE from "three";
@@ -102,15 +103,18 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   autoBalance = true,
   autoBalanceSpringK = 0.3,
   autoBalanceDampingC = 0.03,
-  autoBalanceSpringOnY = 0.3,
-  autoBalanceDampingOnY = 0.02,
+  autoBalanceSpringOnY = 0.5,
+  autoBalanceDampingOnY = 0.015,
   // Animation temporary setups
   animated = false,
+  // Mode setups
+  mode = null,
   // Other rigibody props from parent
   ...props
 }: EcctrlProps, ref) => {
   const characterRef = ref as RefObject<RapierRigidBody> || useRef<RapierRigidBody>()
   const characterModelRef = useRef<THREE.Group>();
+  const characterModelIndicator = useMemo(() => new THREE.Object3D(), [])
 
   /** 
    * Body collider setup
@@ -395,9 +399,22 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   }
 
   /**
+   * Check if inside keyboardcontrols
+   */
+  function useIsInsideKeyboardControls() {
+    try {
+      return !!useKeyboardControls()
+    } catch {
+      return false
+    }
+  }
+  const isInsideKeyboardControls = useIsInsideKeyboardControls();
+
+  /**
    * keyboard controls setup
    */
-  const [subscribeKeys, getKeys] = useKeyboardControls();
+  const [subscribeKeys, getKeys] = isInsideKeyboardControls ? useKeyboardControls() : [null];
+  const presetKeys = { forward: false, backward: false, leftward: false, rightward: false, jump: false, run: false };
   const { rapier, world } = useRapier();
 
   /**
@@ -486,6 +503,22 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   let slopeRayHit: RayColliderToi = null;
 
   /**
+   * Point to move setup
+   */
+  let isBodyHitWall = false;
+  let isPointMoving = false;
+  const crossVector = useMemo(() => new THREE.Vector3(), []);
+  const pointToPoint = useMemo(() => new THREE.Vector3(), []);
+  const getPointToMovePoint = useGame((state) => state.getPointToMovePoint);
+  const bodySensorRef = useRef<Collider>();
+  const handleOnIntersectionEnter = () => {
+    isBodyHitWall = true
+  }
+  const handleOnIntersectionExit = () => {
+    isBodyHitWall = false
+  }
+
+  /**
    * Character moving function
    */
   const moveCharacter = (
@@ -515,7 +548,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     }
 
     // Apply character quaternion to moving direction
-    movingDirection.applyQuaternion(characterModelRef.current.quaternion);
+    movingDirection.applyQuaternion(characterModelIndicator.quaternion);
     // Calculate moving object velocity direction according to character moving direction
     movingObjectVelocityInCharacterDir
       .copy(movingObjectVelocity)
@@ -570,10 +603,10 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
      * Check if character complete turned to the wanted direction
      */
     const characterRotated =
-      Math.sin(characterModelRef.current.rotation.y).toFixed(3) ==
+      Math.sin(characterModelIndicator.rotation.y).toFixed(3) ==
       Math.sin(modelEuler.y).toFixed(3);
 
-    // If character hasn't complete turning, change the impulse quaternion follow characterModelRef quaternion
+    // If character hasn't complete turning, change the impulse quaternion follow characterModelIndicator quaternion
     if (!characterRotated) {
       moveImpulse.set(
         moveForceNeeded.x *
@@ -623,6 +656,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
    * Character auto balance function
    */
   const autoBalanceCharacter = () => {
+    // Match body component to character model rotation on Y
     bodyFacingVec.set(0, 0, 1).applyQuaternion(quat(characterRef.current.rotation()))
     bodyBalanceVec.set(0, 1, 0).applyQuaternion(quat(characterRef.current.rotation()))
 
@@ -630,9 +664,9 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     bodyFacingVecOnY.set(bodyFacingVec.x, 0, bodyFacingVec.z)
     bodyBalanceVecOnZ.set(bodyBalanceVec.x, bodyBalanceVec.y, 0)
 
-    characterModelRef.current.getWorldDirection(modelFacingVec)
+    characterModelIndicator.getWorldDirection(modelFacingVec)
     const crossVecOnX = vectorY.clone().cross(bodyBalanceVecOnX);
-    const crossVecOnY = vectorZ.clone().cross(bodyFacingVecOnY);
+    const crossVecOnY = modelFacingVec.clone().cross(bodyFacingVecOnY);
     const crossVecOnZ = vectorY.clone().cross(bodyBalanceVecOnZ);
 
     dragAngForce.set(
@@ -640,7 +674,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
       autoBalanceSpringK * (bodyBalanceVecOnX.angleTo(vectorY))
       - characterRef.current.angvel().x * autoBalanceDampingC,
       (crossVecOnY.y < 0 ? 1 : -1) *
-      autoBalanceSpringOnY * (bodyFacingVecOnY.angleTo(vectorZ))
+      autoBalanceSpringOnY * (modelFacingVec.angleTo(bodyFacingVecOnY))
       - characterRef.current.angvel().y * autoBalanceDampingOnY,
       (crossVecOnZ.z < 0 ? 1 : -1) *
       autoBalanceSpringK * (bodyBalanceVecOnZ.angleTo(vectorY))
@@ -664,6 +698,30 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     }
   }
 
+  /**
+   * Point-to-move function
+   */
+  const pointToMove = (delta: number, slopeAngle: number, movingObjectVelocity: THREE.Vector3) => {
+    const moveToPoint = getPointToMovePoint().pointToMovePoint;
+    if (moveToPoint) {
+      pointToPoint.set(moveToPoint.x - currentPos.x, 0, moveToPoint.z - currentPos.z)
+      crossVector.crossVectors(pointToPoint, vectorZ)
+      // Rotate character to moving direction
+      modelEuler.y = (crossVector.y > 0 ? -1 : 1) * pointToPoint.angleTo(vectorZ);
+      // Once character close to the target point (distance<0.5),
+      // Or character close to the wall (bodySensor intersects) 
+      // stop moving
+      if (characterRef.current) {
+        if (pointToPoint.length() > 0.5 && !isBodyHitWall) {
+          moveCharacter(delta, false, slopeAngle, movingObjectVelocity)
+          isPointMoving = true
+        } else {
+          isPointMoving = false
+        }
+      }
+    }
+  }
+
   useEffect(() => {
     // Initialize directional light
     if (followLight) {
@@ -673,50 +731,67 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
         }
       ) as THREE.DirectionalLight;
     }
+  });
 
-    // Action 1 key subscribe for special animation
-    const unSubscribeAction1 = subscribeKeys(
-      (state) => state.action1,
-      (value) => {
-        if (value) {
-          animated && action1Animation();
+  /**
+   * Keyboard controls subscribe setup
+   */
+  // If inside keyboardcontrols, active subscribeKeys
+  if (isInsideKeyboardControls) {
+    useEffect(() => {
+      // Action 1 key subscribe for special animation
+      const unSubscribeAction1 = subscribeKeys(
+        (state) => state.action1,
+        (value) => {
+          if (value) {
+            animated && action1Animation();
+          }
         }
-      }
-    );
+      );
 
-    // Action 2 key subscribe for special animation
-    const unSubscribeAction2 = subscribeKeys(
-      (state) => state.action2,
-      (value) => {
-        if (value) {
-          animated && action2Animation();
+      // Action 2 key subscribe for special animation
+      const unSubscribeAction2 = subscribeKeys(
+        (state) => state.action2,
+        (value) => {
+          if (value) {
+            animated && action2Animation();
+          }
         }
-      }
-    );
+      );
 
-    // Action 3 key subscribe for special animation
-    const unSubscribeAction3 = subscribeKeys(
-      (state) => state.action3,
-      (value) => {
-        if (value) {
-          animated && action3Animation();
+      // Action 3 key subscribe for special animation
+      const unSubscribeAction3 = subscribeKeys(
+        (state) => state.action3,
+        (value) => {
+          if (value) {
+            animated && action3Animation();
+          }
         }
-      }
-    );
+      );
 
-    // Trigger key subscribe for special animation
-    const unSubscribeAction4 = subscribeKeys(
-      (state) => state.action4,
-      (value) => {
-        if (value) {
-          animated && action4Animation();
+      // Trigger key subscribe for special animation
+      const unSubscribeAction4 = subscribeKeys(
+        (state) => state.action4,
+        (value) => {
+          if (value) {
+            animated && action4Animation();
+          }
         }
-      }
-    );
+      );
 
-    /**
-     * Joystick subscribe setup
-     */
+      return () => {
+        unSubscribeAction1();
+        unSubscribeAction2();
+        unSubscribeAction3();
+        unSubscribeAction4();
+      };
+    });
+  }
+
+  /**
+   * Joystick subscribe setup
+   */
+  useEffect(() => {
     // Subscribe button 2
     const unSubPressButton2 = useJoystickControls.subscribe(
       (state) => state.curButton2Pressed,
@@ -758,16 +833,12 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     )
 
     return () => {
-      unSubscribeAction1();
-      unSubscribeAction2();
-      unSubscribeAction3();
-      unSubscribeAction4();
       unSubPressButton2();
       unSubPressButton3();
       unSubPressButton4();
       unSubPressButton5();
     };
-  });
+  })
 
   useEffect(() => {
     // Lock character rotations at Y axis
@@ -777,6 +848,12 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
       autoBalance ? true : false,
       false
     );
+
+    // Reset character quaternion
+    return (() => {
+      characterModelRef.current?.quaternion.set(0, 0, 0, 1);
+      characterRef.current?.setRotation({ x: 0, y: 0, z: 0, w: 1 }, false);
+    })
   }, [autoBalance]);
 
   useEffect(() => {
@@ -830,7 +907,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     /**
      * Getting all the useful keys from useKeyboardControls
      */
-    const { forward, backward, leftward, rightward, jump, run } = getKeys();
+    const { forward, backward, leftward, rightward, jump, run } = isInsideKeyboardControls ? getKeys() : presetKeys;
 
     // Getting moving directions (IIFE)
     modelEuler.y = ((movingDirection) => movingDirection === null ? modelEuler.y : movingDirection)
@@ -841,9 +918,8 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
       moveCharacter(delta, run, slopeAngle, movingObjectVelocity);
 
     // Character current velocity
-    if (characterRef.current) {
+    if (characterRef.current)
       currentVel.copy(characterRef.current.linvel() as THREE.Vector3);
-    }
 
     // Jump impulse
     if ((jump || button1Pressed) && canJump) {
@@ -868,12 +944,14 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
         ?.applyImpulseAtPoint(characterMassForce, standingForcePoint, true);
     }
 
-    // Rotate character model
+    // Rotate character Indicator
     modelQuat.setFromEuler(modelEuler);
-    characterModelRef.current.quaternion.rotateTowards(
+    characterModelIndicator.quaternion.rotateTowards(
       modelQuat,
       delta * turnSpeed
     );
+    // If autobalance is off, rotate character model
+    if (!autoBalance) characterModelRef.current.quaternion.copy(characterModelIndicator.quaternion)
 
     /**
      *  Camera movement
@@ -974,7 +1052,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
           // Apply opposite drage force to the stading rigid body, body type 0
           // Character moving and unmoving should provide different drag force to the platform
           if (rayHitObjectBodyType === 0) {
-            if (!forward && !backward && !leftward && !rightward && canJump && joystickDis === 0) {
+            if (!forward && !backward && !leftward && !rightward && canJump && joystickDis === 0 && !isPointMoving) {
               movingObjectDragForce.set(
                 (currentVel.x - movingObjectVelocity.x) * dragDampingC,
                 0,
@@ -1071,7 +1149,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     /**
      * Apply drag force if it's not moving
      */
-    if (!forward && !backward && !leftward && !rightward && canJump && joystickDis === 0) {
+    if (!forward && !backward && !leftward && !rightward && canJump && joystickDis === 0 && !isPointMoving) {
       // not on a moving object
       if (!isOnMovingObject) {
         dragForce.set(
@@ -1113,14 +1191,17 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     /**
      * Apply auto balance force to the character
      */
-    if (autoBalance && characterRef.current) {
-      autoBalanceCharacter();
-    }
+    if (autoBalance && characterRef.current) autoBalanceCharacter();
 
     /**
      * Camera collision detect
      */
     camCollision && cameraCollisionDetect(delta);
+
+    /**
+     * Point to move feature
+     */
+    if (mode && mode === "PointToMove") pointToMove(delta, slopeAngle, movingObjectVelocity)
 
     /**
      * Apply all the animations
@@ -1134,12 +1215,13 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
         !jump &&
         !button1Pressed &&
         joystickDis === 0 &&
+        !isPointMoving &&
         canJump
       ) {
         idleAnimation();
       } else if ((jump || button1Pressed) && canJump) {
         jumpAnimation();
-      } else if (canJump && (forward || backward || leftward || rightward || joystickDis > 0)) {
+      } else if (canJump && (forward || backward || leftward || rightward || joystickDis > 0 || isPointMoving)) {
         (run || runState) ? runAnimation() : walkAnimation();
       } else if (!canJump) {
         jumpIdleAnimation();
@@ -1163,6 +1245,16 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
         name="character-capsule-collider"
         args={[capsuleHalfHeight, capsuleRadius]}
       />
+      {/* Body collide sensor (only for point to move mode) */}
+      {mode === "PointToMove" &&
+        <CylinderCollider
+          ref={bodySensorRef}
+          sensor
+          args={[capsuleHalfHeight / 2, capsuleRadius]}
+          position={[0, 0, capsuleRadius / 2]}
+          onIntersectionEnter={handleOnIntersectionEnter}
+          onIntersectionExit={handleOnIntersectionExit}
+        />}
       <group ref={characterModelRef} userData={{ camExcludeCollision: true }}>
         {/* This mesh is used for positioning the slope ray origin */}
         <mesh
@@ -1240,6 +1332,11 @@ export interface EcctrlProps extends RigidBodyProps {
   slopeRayDir?: { x: number; y: number; z: number };
   slopeUpExtraForce?: number;
   slopeDownExtraForce?: number;
+  // Head Ray setups
+  showHeadRayOrigin?: boolean;
+  headRayOriginOffest?: number;
+  headRayLength?: number;
+  headRayDir?: { x: number; y: number; z: number };
   // AutoBalance Force setups
   autoBalance?: boolean;
   autoBalanceSpringK?: number;
@@ -1248,6 +1345,8 @@ export interface EcctrlProps extends RigidBodyProps {
   autoBalanceDampingOnY?: number;
   // Animation temporary setups
   animated?: boolean;
+  // Mode setups
+  mode?: string;
   // Other rigibody props from parent
   props?: RigidBodyProps;
 };

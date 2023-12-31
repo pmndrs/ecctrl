@@ -1,9 +1,15 @@
+import * as THREE from "three";
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
 export const useGame = /* @__PURE__ */ create(
-  /* @__PURE__ */ subscribeWithSelector<State>((set) => {
+  /* @__PURE__ */ subscribeWithSelector<State>((set, get) => {
     return {
+      /**
+       * Point to move point
+       */
+      pointToMovePoint: null as THREE.Vector3,
+
       /**
        * Character animations state manegement
        */
@@ -138,18 +144,33 @@ export const useGame = /* @__PURE__ */ create(
       //        return { curAnimation: state.animationSet.additionalAnimation };
       //    });
       // }
+
+      /**
+       * Set/get point to move point
+       */
+      setPointToMovePoint: (point: THREE.Vector3) => {
+        set(() => {
+          return { pointToMovePoint: point };
+        });
+      },
+
+      getPointToMovePoint: () => {
+        return {
+          pointToMovePoint: get().pointToMovePoint,
+        };
+      },
     };
   })
 );
 
 export type AnimationSet = {
-  idle: string;
-  walk: string;
-  run: string;
-  jump: string;
-  jumpIdle: string;
-  jumpLand: string;
-  fall: string;
+  idle?: string;
+  walk?: string;
+  run?: string;
+  jump?: string;
+  jumpIdle?: string;
+  jumpLand?: string;
+  fall?: string;
   // Currently support four additional animations
   action1?: string;
   action2?: string;
@@ -158,10 +179,15 @@ export type AnimationSet = {
 };
 
 type State = {
+  pointToMovePoint: THREE.Vector3;
   curAnimation: string;
   animationSet: AnimationSet;
   initializeAnimationSet: (animationSet: AnimationSet) => void;
   reset: () => void;
+  setPointToMovePoint: (point: THREE.Vector3) => void;
+  getPointToMovePoint: () => {
+    pointToMovePoint: THREE.Vector3;
+  }
 } & {
   [key in keyof AnimationSet]: () => void;
 };

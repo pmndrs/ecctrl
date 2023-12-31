@@ -36,6 +36,7 @@ export default function CharacterModel(props: CharacterModelProps) {
   const rightHandPos = useMemo(() => new THREE.Vector3(), []);
   const leftHandPos = useMemo(() => new THREE.Vector3(), []);
   const bodyPos = useMemo(() => new THREE.Vector3(), []);
+  const bodyRot = useMemo(() => new THREE.Quaternion(), []);
   let rightHand: THREE.Object3D = null;
   let leftHand: THREE.Object3D = null;
   let mugModel: THREE.Object3D = null;
@@ -130,20 +131,25 @@ export default function CharacterModel(props: CharacterModelProps) {
 
   useFrame(() => {
     if (curAnimation === animationSet.action4) {
-      if (rightHand && leftHand) {
+      if (rightHand) {
         rightHand.getWorldPosition(rightHandPos);
-        leftHand.getWorldPosition(leftHandPos);
-        rightHandRef.current.parent.getWorldPosition(bodyPos);
+        group.current.getWorldPosition(bodyPos);
+        group.current.getWorldQuaternion(bodyRot);
       }
 
-      // Apply both hands position to hand colliders
-      if (rightHandColliderRef.current && leftHandColliderRef.current) {
-        rightHandRef.current.position.copy(rightHandPos).sub(bodyPos);
+      // Apply hands position to hand colliders
+      if (rightHandColliderRef.current) {
+        // check if parent group autobalance is on or off
+        if (group.current.parent.quaternion.y === 0 && group.current.parent.quaternion.w === 1) {
+          rightHandRef.current.position.copy(rightHandPos).sub(bodyPos).applyQuaternion(bodyRot.conjugate());
+        } else {
+          rightHandRef.current.position.copy(rightHandPos).sub(bodyPos);
+        }
         rightHandColliderRef.current.setTranslationWrtParent(
           rightHandRef.current.position
         );
       }
-    } 
+    }
   });
 
   useEffect(() => {
@@ -190,7 +196,7 @@ export default function CharacterModel(props: CharacterModelProps) {
       (action as any)._mixer._listeners = [];
 
       // Move hand collider back to initial position after action
-      if (curAnimation===animationSet.action4) {
+      if (curAnimation === animationSet.action4) {
         if (rightHandColliderRef.current) {
           rightHandColliderRef.current.setTranslationWrtParent(vec3({ x: 0, y: 0, z: 0 }))
         }

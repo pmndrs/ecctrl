@@ -64,6 +64,8 @@ export default function Experience() {
             dampingC={0.2}
             autoBalanceSpringK={1.2}
             autoBalanceDampingC={0.04}
+            autoBalanceSpringOnY={0.7}
+            autoBalanceDampingOnY={0.05}
           >
             {/* Replace your model here */}
             <CharacterModel />

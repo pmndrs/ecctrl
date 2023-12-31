@@ -4,7 +4,7 @@ import { Canvas } from "@react-three/fiber";
 import Experience from "../example/Experience";
 import { Leva } from "leva";
 import { EcctrlJoystick } from "../src/EcctrlJoystick";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 const root = ReactDOM.createRoot(document.querySelector("#root"));
 
@@ -43,7 +43,9 @@ root.render(
         }
       }}
     >
-      <Experience />
+      <Suspense fallback={null}>
+        <Experience />
+      </Suspense>
     </Canvas>
   </>
 );
