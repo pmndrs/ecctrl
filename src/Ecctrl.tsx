@@ -682,7 +682,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     );
 
     // Apply balance torque impulse
-    characterRef.current.applyTorqueImpulse(dragAngForce, false)
+    characterRef.current.applyTorqueImpulse(dragAngForce, mode === "PointToMove" ? true : false)
   };
 
   /**
@@ -708,11 +708,11 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
       crossVector.crossVectors(pointToPoint, vectorZ)
       // Rotate character to moving direction
       modelEuler.y = (crossVector.y > 0 ? -1 : 1) * pointToPoint.angleTo(vectorZ);
-      // Once character close to the target point (distance<0.5),
+      // Once character close to the target point (distance<0.3),
       // Or character close to the wall (bodySensor intersects) 
       // stop moving
       if (characterRef.current) {
-        if (pointToPoint.length() > 0.5 && !isBodyHitWall) {
+        if (pointToPoint.length() > 0.3 && !isBodyHitWall) {
           moveCharacter(delta, false, slopeAngle, movingObjectVelocity)
           isPointMoving = true
         } else {
