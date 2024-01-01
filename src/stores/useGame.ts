@@ -11,6 +11,11 @@ export const useGame = /* @__PURE__ */ create(
       pointToMovePoint: null as THREE.Vector3,
 
       /**
+       * Check is camera based movement
+       */
+      isCameraBased: false as boolean,
+
+      /**
        * Character animations state manegement
        */
       // Initial animation
@@ -159,6 +164,21 @@ export const useGame = /* @__PURE__ */ create(
           pointToMovePoint: get().pointToMovePoint,
         };
       },
+
+      /**
+       * Set/get camera based movement
+       */
+      setCameraBased: (isCameraBased: boolean) => {
+        set(() => {
+          return { isCameraBased: isCameraBased };
+        });
+      },
+
+      getCameraBased: () => {
+        return {
+          isCameraBased: get().isCameraBased,
+        };
+      },
     };
   })
 );
@@ -180,6 +200,7 @@ export type AnimationSet = {
 
 type State = {
   pointToMovePoint: THREE.Vector3;
+  isCameraBased: boolean;
   curAnimation: string;
   animationSet: AnimationSet;
   initializeAnimationSet: (animationSet: AnimationSet) => void;
@@ -187,6 +208,10 @@ type State = {
   setPointToMovePoint: (point: THREE.Vector3) => void;
   getPointToMovePoint: () => {
     pointToMovePoint: THREE.Vector3;
+  }
+  setCameraBased: (isCameraBased: boolean) => void;
+  getCameraBased: () => {
+    isCameraBased: boolean;
   }
 } & {
   [key in keyof AnimationSet]: () => void;

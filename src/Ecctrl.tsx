@@ -116,6 +116,17 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   const characterModelRef = useRef<THREE.Group>();
   const characterModelIndicator = useMemo(() => new THREE.Object3D(), [])
 
+  /**
+   * Mode setup
+   */
+  let isModePointToMove = false
+  const setCameraBased = useGame((state) => state.setCameraBased);
+  const getCameraBased = useGame((state) => state.getCameraBased);
+  if (mode) {
+    if (mode === "PointToMove") isModePointToMove = true
+    if (mode === "CameraBasedMovement") setCameraBased(true)
+  }
+
   /** 
    * Body collider setup
    */
@@ -664,7 +675,13 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     bodyFacingVecOnY.set(bodyFacingVec.x, 0, bodyFacingVec.z)
     bodyBalanceVecOnZ.set(bodyBalanceVec.x, bodyBalanceVec.y, 0)
 
-    characterModelIndicator.getWorldDirection(modelFacingVec)
+    // Check if is camera based movement
+    if (getCameraBased().isCameraBased) {
+      modelEuler.y = pivot.rotation.y
+      pivot.getWorldDirection(modelFacingVec)
+    } else { 
+      characterModelIndicator.getWorldDirection(modelFacingVec) 
+    }
     const crossVecOnX = vectorY.clone().cross(bodyBalanceVecOnX);
     const crossVecOnY = modelFacingVec.clone().cross(bodyFacingVecOnY);
     const crossVecOnZ = vectorY.clone().cross(bodyBalanceVecOnZ);
@@ -682,7 +699,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     );
 
     // Apply balance torque impulse
-    characterRef.current.applyTorqueImpulse(dragAngForce, mode === "PointToMove" ? true : false)
+    characterRef.current.applyTorqueImpulse(dragAngForce, true)
   };
 
   /**
@@ -950,8 +967,15 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
       modelQuat,
       delta * turnSpeed
     );
-    // If autobalance is off, rotate character model
-    if (!autoBalance) characterModelRef.current.quaternion.copy(characterModelIndicator.quaternion)
+    
+    // If autobalance is off, rotate character model itself
+    if (!autoBalance) {
+      if (getCameraBased().isCameraBased) {
+        characterModelRef.current.quaternion.copy(pivot.quaternion)
+      } else {
+        characterModelRef.current.quaternion.copy(characterModelIndicator.quaternion)
+      }
+    }
 
     /**
      *  Camera movement
@@ -1201,7 +1225,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     /**
      * Point to move feature
      */
-    if (mode && mode === "PointToMove") pointToMove(delta, slopeAngle, movingObjectVelocity)
+    isModePointToMove && pointToMove(delta, slopeAngle, movingObjectVelocity)
 
     /**
      * Apply all the animations
@@ -1246,7 +1270,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
         args={[capsuleHalfHeight, capsuleRadius]}
       />
       {/* Body collide sensor (only for point to move mode) */}
-      {mode === "PointToMove" &&
+      {isModePointToMove &&
         <CylinderCollider
           ref={bodySensorRef}
           sensor
