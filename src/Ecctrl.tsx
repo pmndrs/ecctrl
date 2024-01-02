@@ -520,7 +520,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   let isPointMoving = false;
   const crossVector = useMemo(() => new THREE.Vector3(), []);
   const pointToPoint = useMemo(() => new THREE.Vector3(), []);
-  const getPointToMovePoint = useGame((state) => state.getPointToMovePoint);
+  const getMoveToPoint = useGame((state) => state.getMoveToPoint);
   const bodySensorRef = useRef<Collider>();
   const handleOnIntersectionEnter = () => {
     isBodyHitWall = true
@@ -719,7 +719,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
    * Point-to-move function
    */
   const pointToMove = (delta: number, slopeAngle: number, movingObjectVelocity: THREE.Vector3) => {
-    const moveToPoint = getPointToMovePoint().pointToMovePoint;
+    const moveToPoint = getMoveToPoint().moveToPoint;
     if (moveToPoint) {
       pointToPoint.set(moveToPoint.x - currentPos.x, 0, moveToPoint.z - currentPos.z)
       crossVector.crossVectors(pointToPoint, vectorZ)
@@ -967,7 +967,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
       modelQuat,
       delta * turnSpeed
     );
-    
+
     // If autobalance is off, rotate character model itself
     if (!autoBalance) {
       if (getCameraBased().isCameraBased) {

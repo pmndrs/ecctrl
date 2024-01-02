@@ -8,7 +8,7 @@ export const useGame = /* @__PURE__ */ create(
       /**
        * Point to move point
        */
-      pointToMovePoint: null as THREE.Vector3,
+      moveToPoint: null as THREE.Vector3,
 
       /**
        * Check is camera based movement
@@ -153,15 +153,15 @@ export const useGame = /* @__PURE__ */ create(
       /**
        * Set/get point to move point
        */
-      setPointToMovePoint: (point: THREE.Vector3) => {
+      setMoveToPoint: (point: THREE.Vector3) => {
         set(() => {
-          return { pointToMovePoint: point };
+          return { moveToPoint: point };
         });
       },
 
-      getPointToMovePoint: () => {
+      getMoveToPoint: () => {
         return {
-          pointToMovePoint: get().pointToMovePoint,
+          moveToPoint: get().moveToPoint,
         };
       },
 
@@ -199,15 +199,15 @@ export type AnimationSet = {
 };
 
 type State = {
-  pointToMovePoint: THREE.Vector3;
+  moveToPoint: THREE.Vector3;
   isCameraBased: boolean;
   curAnimation: string;
   animationSet: AnimationSet;
   initializeAnimationSet: (animationSet: AnimationSet) => void;
   reset: () => void;
-  setPointToMovePoint: (point: THREE.Vector3) => void;
-  getPointToMovePoint: () => {
-    pointToMovePoint: THREE.Vector3;
+  setMoveToPoint: (point: THREE.Vector3) => void;
+  getMoveToPoint: () => {
+    moveToPoint: THREE.Vector3;
   }
   setCameraBased: (isCameraBased: boolean) => void;
   getCameraBased: () => {
