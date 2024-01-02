@@ -13,30 +13,26 @@
 
 ## New Features
 
-### (2023-11-18) EcctrlJoystick:
+### (2024-1-1) EcctrlMode:
 
-- Ecctrl now supports touch screen control!
+- Now you can seamlessly switch between different modes by adding "mode" inside Ecctrl.
 
-- You can easily import and use the built-in 3D joystick.
-  (note: place EcctrlJoystick outside of the canvas component)
+`<Ecctrl mode="PointToMove">`
+
+- "PointToMove" mode is designed for click-to-move or path following features. (no needs for keyboard controls)
 
 ```js
-import Ecctrl, {EcctrlJoystick} from 'ecctrl'
-//...
-  <EcctrlJoystick />
-  <Canvas>
-    {/* ... */}
-  </Canvas>
-//...
+import { useGame } from 'ecctrl'
+// ...
+const setMoveToPoint = useGame((state) => state.setMoveToPoint)
+// ...
+// call function setMoveToPoint(), whenever character needs to move
+setMoveToPoint(point) // "point" is a vec3 value 
 ```
 
-- For more detailed settings, including lights, materials, and textures, please refer to the following sections.
+- Here is a simple click-to-move example: [Ecctrl CodeSandbox](https://codesandbox.io/p/sandbox/ecctrl-pointtomove-m9z6xh)
 
-- Additionally, I've prepared a simple [Ecctrl CodeSandbox](https://codesandbox.io/s/ecctrl-w-o-animations-3k3zxt) for online testing and demostration.
-
-- Also, here is another [Ecctrl CodeSandbox](https://codesandbox.io/s/ecctrl-with-animations-nr4493) showcasing character animation functionality.
-
-[![screenshot](example/ecctrlJoystick.png)](https://codesandbox.io/s/ecctrl-w-o-animations-3k3zxt)
+[![screenshot](example/ecctrlClickToMove.png)](https://codesandbox.io/p/sandbox/ecctrl-pointtomove-m9z6xh)
 
 Check out the [featurelog.md](/featurelog.md) for details on previous updates and features.
 
@@ -174,6 +170,8 @@ EcctrlProps: {
   autoBalanceDampingOnY: 0.02, // Auto-balance damping on Y-axis
   // Animation temporary setups
   animated: false, // Enable animation
+  // Mode setups
+  mode: null, // Activate different ecctrl modes
   // Other rigibody props from parent
   // Rigidbody props can be used here,
   // such as position, friction, gravityScale, etc.
@@ -415,6 +413,24 @@ const releaseAllButtons = useJoystickControls(
 setJoystick(joystickDis, joystickAng, runState);
 // or
 pressButton1();
+```
+
+### Ecctrl Mode
+
+Activate different modes in Ecctrl by including the desired mode inside Ecctrl component: 
+`<Ecctrl mode="PointToMove">`.
+
+#### 1. "PointToMove" Mode ([CodeSandbox Demo](https://codesandbox.io/p/sandbox/ecctrl-pointtomove-m9z6xh?file=%2Fsrc%2FMap.js%3A46%2C19))
+
+This mode doesn't require keyboard controls and is designed for click-to-move or path-following features.
+
+```js
+import { useGame } from 'ecctrl'
+// ...
+const setMoveToPoint = useGame((state) => state.setMoveToPoint)
+// ...
+// call function setMoveToPoint(), whenever character needs to move
+setMoveToPoint(point) // "point" is a vec3 value 
 ```
 
 ### (Optional) First-person view setup

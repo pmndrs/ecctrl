@@ -1,5 +1,26 @@
 ## New Features
 
+### (2024-1-1) EcctrlMode:
+
+- Now you can seamlessly switch between different modes by adding "mode" inside Ecctrl.
+
+`<Ecctrl mode="PointToMove">`
+
+- "PointToMove" mode is designed for click-to-move or path following features. (no needs for keyboard controls)
+
+```js
+import { useGame } from 'ecctrl'
+// ...
+const setMoveToPoint = useGame((state) => state.setMoveToPoint)
+// ...
+// call function setMoveToPoint(), whenever character needs to move
+setMoveToPoint(point) // "point" is a vec3 value 
+```
+
+- Here is a simple click-to-move example: [Ecctrl CodeSandbox](https://codesandbox.io/p/sandbox/ecctrl-pointtomove-m9z6xh)
+
+[![screenshot](example/ecctrlClickToMove.png)](https://codesandbox.io/p/sandbox/ecctrl-pointtomove-m9z6xh)
+
 ### (2023-11-18) EcctrlJoystick:
 
 - Ecctrl now supports touch screen control!
