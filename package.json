@@ -1,6 +1,6 @@
 {
   "name": "ecctrl",
-  "version": "1.0.58",
+  "version": "1.0.59",
   "author": "Erdong Chen",
   "license": "MIT",
   "description": "A floating rigibody character controller for R3F",
@@ -41,7 +41,6 @@
     "vite": "^4.3.9"
   },
   "dependencies": {
-    "@react-spring/three": "^9.7.3",
     "leva": "^0.9.34",
     "zustand": "^4.4.7"
   },
