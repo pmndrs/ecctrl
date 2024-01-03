@@ -7,11 +7,11 @@ const isCodeSandbox = 'SANDBOX_URL' in process.env || 'CODESANDBOX_HOST' in proc
 const dev = defineConfig({
   plugins: [react()],
   root: 'example/',
-  publicDir: "../public/",
+  publicDir: '../public/',
   base: './',
   server: {
     host: true,
-    open: !isCodeSandbox // Open if it's not a CodeSandbox
+    open: !isCodeSandbox, // Open if it's not a CodeSandbox
   },
 })
 
@@ -31,17 +31,8 @@ const build = defineConfig({
       output: {
         sourcemapExcludeSources: true,
       },
-    }
-  },
-  plugins: [
-    {
-      name: 'vite-tsc',
-      generateBundle(options) {
-        const ext = options.format === 'es' ? 'ts' : 'cts'
-        this.emitFile({ type: 'asset', fileName: `Ecctrl.d.${ext}`, source: `export * from '../src/Ecctrl.tsx'` })
-      },
     },
-  ]
+  },
 })
 
 export default process.argv[2] ? build : dev

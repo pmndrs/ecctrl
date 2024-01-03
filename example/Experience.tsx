@@ -13,6 +13,7 @@ import DynamicPlatforms from "./DynamicPlatforms";
 import ShotCube from "./ShotCube";
 import { useControls } from "leva";
 import CharacterModel from "./CharacterModel";
+import React from "react";
 
 export default function Experience() {
   /**
