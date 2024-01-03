@@ -25,25 +25,29 @@
   "main": "./dist/Ecctrl.cjs",
   "module": "./dist/Ecctrl.js",
   "exports": {
+    "types": "./dist/Ecctrl.d.ts",
     "require": "./dist/Ecctrl.cjs",
     "import": "./dist/Ecctrl.js"
   },
   "sideEffects": false,
   "devDependencies": {
+    "@react-three/drei": "^9.92.7",
+    "@react-three/fiber": "^8.15.13",
     "@types/react": "^18.2.28",
     "@types/react-dom": "^18.2.8",
     "@vitejs/plugin-react": "^4.1.0",
+    "r3f-perf": "^7.1.2",
     "typescript": "^5.2.2",
     "vite": "^4.3.9"
   },
   "dependencies": {
-    "leva": "^0.9.34", 
-    "r3f-perf": "^7.1.2",
-    "zustand": "^4.4.1"
+    "@react-spring/three": "^9.7.3",
+    "leva": "^0.9.34",
+    "zustand": "^4.4.7"
   },
   "peerDependencies": {
-    "@react-three/fiber": ">=8.0",
     "@react-three/drei": ">=9.0",
+    "@react-three/fiber": ">=8.0",
     "@react-three/rapier": ">=1.0",
     "react": ">=18",
     "react-dom": ">=18.0",
@@ -51,7 +55,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && tsc",
     "preview": "vite preview"
   }
 }
