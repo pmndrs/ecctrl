@@ -138,6 +138,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   const bodyBalanceVecOnZ = useMemo(() => new THREE.Vector3(), []);
   const vectorY = useMemo(() => new THREE.Vector3(0, 1, 0), []);
   const vectorZ = useMemo(() => new THREE.Vector3(0, 0, 1), []);
+  const bodyContactForce = useMemo(() => new THREE.Vector3(), []);
 
   // Animation change functions
   const idleAnimation = !animated ? null : useGame((state) => state.idle);
@@ -439,16 +440,15 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   const initialGravityScale: number = useMemo(() => props.gravityScale || 1, [])
 
   // on moving object state
+  let massRatio = 1;
   let isOnMovingObject = false;
   const standingForcePoint = useMemo(() => new THREE.Vector3(), []);
   const movingObjectDragForce = useMemo(() => new THREE.Vector3(), []);
   const movingObjectVelocity = useMemo(() => new THREE.Vector3(), []);
-  const movingObjectVelocityInCharacterDir = useMemo(
-    () => new THREE.Vector3(),
-    []
-  );
+  const movingObjectVelocityInCharacterDir = useMemo(() => new THREE.Vector3(), []);
   const distanceFromCharacterToObject = useMemo(() => new THREE.Vector3(), []);
   const objectAngvelToLinvel = useMemo(() => new THREE.Vector3(), []);
+  const velocityDiff = useMemo(() => new THREE.Vector3(), []);
 
   /**
    * Initial light setup
@@ -560,6 +560,10 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
 
     // Apply character quaternion to moving direction
     movingDirection.applyQuaternion(characterModelIndicator.quaternion);
+
+    /**
+     * Moving object conditions
+     */
     // Calculate moving object velocity direction according to character moving direction
     movingObjectVelocityInCharacterDir
       .copy(movingObjectVelocity)
@@ -679,8 +683,8 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     if (getCameraBased().isCameraBased) {
       modelEuler.y = pivot.rotation.y
       pivot.getWorldDirection(modelFacingVec)
-    } else { 
-      characterModelIndicator.getWorldDirection(modelFacingVec) 
+    } else {
+      characterModelIndicator.getWorldDirection(modelFacingVec)
     }
     const crossVecOnX = vectorY.clone().cross(bodyBalanceVecOnX);
     const crossVecOnY = modelFacingVec.clone().cross(bodyFacingVecOnY);
@@ -1038,14 +1042,10 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
         );
         const rayHitObjectBodyType = rayHit.collider.parent().bodyType();
         const rayHitObjectBodyMass = rayHit.collider.parent().mass();
+        massRatio = characterRef.current.mass() / rayHitObjectBodyMass;
         // Body type 0 is rigid body, body type 1 is fixed body, body type 2 is kinematic body
-        // And if it stands on big mass object (>0.5)
-        if (
-          (rayHitObjectBodyType === 0 || rayHitObjectBodyType === 2) &&
-          rayHitObjectBodyMass > 0.5
-        ) {
+        if (rayHitObjectBodyType === 0 || rayHitObjectBodyType === 2) {
           isOnMovingObject = true;
-
           // Calculate distance between character and moving object
           distanceFromCharacterToObject
             .copy(currentPos)
@@ -1071,19 +1071,24 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
               movingObjectAngvel,
               distanceFromCharacterToObject
             ).z
-          );
+          ).multiplyScalar(Math.min(1, 1 / massRatio));
+          // If the velocity diff is too high (> 30), ignore movingObjectVelocity
+          velocityDiff.subVectors(movingObjectVelocity, currentVel);
+          if (velocityDiff.length() > 30) movingObjectVelocity.multiplyScalar(1 / velocityDiff.length());
 
           // Apply opposite drage force to the stading rigid body, body type 0
           // Character moving and unmoving should provide different drag force to the platform
           if (rayHitObjectBodyType === 0) {
             if (!forward && !backward && !leftward && !rightward && canJump && joystickDis === 0 && !isPointMoving) {
-              movingObjectDragForce.set(
-                (currentVel.x - movingObjectVelocity.x) * dragDampingC,
-                0,
-                (currentVel.z - movingObjectVelocity.z) * dragDampingC
-              );
+              movingObjectDragForce.copy(bodyContactForce)
+                .multiplyScalar(delta)
+                .multiplyScalar(Math.min(1, 1 / massRatio)) // Scale up/down base on different masses ratio
+                .negate()
+              bodyContactForce.set(0, 0, 0);
             } else {
-              movingObjectDragForce.copy(moveImpulse).negate();
+              movingObjectDragForce.copy(moveImpulse)
+                .multiplyScalar(Math.min(1, 1 / massRatio)) // Scale up/down base on different masses ratio
+                .negate();
             }
             rayHit.collider
               .parent()
@@ -1093,11 +1098,18 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
                 true
               );
           }
-        } else {
+        } else { // on fixed body
+          massRatio = 1;
           isOnMovingObject = false;
+          bodyContactForce.set(0, 0, 0);
           movingObjectVelocity.set(0, 0, 0);
         }
       }
+    } else { // in the air
+      massRatio = 1;
+      isOnMovingObject = false;
+      bodyContactForce.set(0, 0, 0);
+      movingObjectVelocity.set(0, 0, 0);
     }
 
     /**
@@ -1186,9 +1198,9 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
       // on a moving object
       else {
         dragForce.set(
-          (movingObjectVelocity.x - currentVel.x) * dragDampingC * 2,
+          (movingObjectVelocity.x - currentVel.x) * dragDampingC,
           0,
-          (movingObjectVelocity.z - currentVel.z) * dragDampingC * 2
+          (movingObjectVelocity.z - currentVel.z) * dragDampingC
         );
         characterRef.current.applyImpulse(dragForce, true);
       }
@@ -1263,6 +1275,8 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
       ref={characterRef}
       position={props.position || [0, 5, 0]}
       friction={props.friction || -0.5}
+      onContactForce={(e) => bodyContactForce.set(e.totalForce.x, e.totalForce.y, e.totalForce.z)}
+      onCollisionExit={() => bodyContactForce.set(0, 0, 0)}
       {...props}
     >
       <CapsuleCollider

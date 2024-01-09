@@ -221,6 +221,8 @@ export const useFollowCam = function (props: UseFollowCamProps) {
       // Touch event
       document.removeEventListener("touchend", onTouchEnd);
       document.removeEventListener("touchmove", onTouchMove);
+      // Remove camera from followCam
+      followCam.remove(camera);
     };
   });
 
