@@ -53,6 +53,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   floatHeight = 0.3,
   characterInitDir = 0, // in rad
   followLight = false,
+  disableFollowCam = false,
   // Follow camera setups
   camInitDis = -5,
   camMaxDis = -7,
@@ -459,6 +460,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
    * Follow camera initial setups from props
    */
   const cameraSetups = {
+    disableFollowCam,
     camInitDis,
     camMaxDis,
     camMinDis,
@@ -990,7 +992,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
       currentPos.z + camTargetPos.z
     );
     pivot.position.lerp(pivotPosition, 1 - Math.exp(-camFollowMult * delta));
-    state.camera.lookAt(pivot.position);
+    !disableFollowCam && state.camera.lookAt(pivot.position);
 
     /**
      * Ray casting detect if on ground
@@ -1004,7 +1006,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
       null,
       // I have no idea
       characterRef.current as unknown as Collider,
-      null,
+      characterRef.current,
       // this exclude with sensor collider
       ((collider) => !collider.isSensor())
     );
@@ -1125,7 +1127,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
       null,
       // Still no idea
       characterRef.current as unknown as Collider,
-      null,
+      characterRef.current,
       // this exclude with sensor collider
       ((collider) => !collider.isSensor())
     );
@@ -1324,6 +1326,7 @@ export interface EcctrlProps extends RigidBodyProps {
   floatHeight?: number;
   characterInitDir?: number;
   followLight?: boolean;
+  disableFollowCam?: boolean;
   // Follow camera setups
   camInitDis?: number;
   camMaxDis?: number;

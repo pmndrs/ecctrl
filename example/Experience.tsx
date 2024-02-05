@@ -19,8 +19,9 @@ export default function Experience() {
   /**
    * Debug settings
    */
-  const { physics } = useControls("World Settings", {
+  const { physics, disableFollowCam } = useControls("World Settings", {
     physics: false,
+    disableFollowCam: false,
   });
 
   /**
@@ -67,6 +68,7 @@ export default function Experience() {
             autoBalanceDampingC={0.04}
             autoBalanceSpringOnY={0.7}
             autoBalanceDampingOnY={0.05}
+            disableFollowCam={disableFollowCam}
           >
             {/* Replace your model here */}
             <CharacterModel />

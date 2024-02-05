@@ -22,12 +22,12 @@
 - "PointToMove" mode is designed for click-to-move or path following features. (no needs for keyboard controls)
 
 ```js
-import { useGame } from 'ecctrl'
+import { useGame } from "ecctrl";
 // ...
-const setMoveToPoint = useGame((state) => state.setMoveToPoint)
+const setMoveToPoint = useGame((state) => state.setMoveToPoint);
 // ...
 // call function setMoveToPoint(), whenever character needs to move
-setMoveToPoint(point) // "point" is a vec3 value 
+setMoveToPoint(point); // "point" is a vec3 value
 ```
 
 - Here is a simple click-to-move example: [Ecctrl CodeSandbox](https://codesandbox.io/p/sandbox/ecctrl-pointtomove-m9z6xh)
@@ -117,6 +117,7 @@ EcctrlProps: {
   floatHeight: 0.3, // Height of the character when floating
   characterInitDir: 0, // Character initial facing direction (in rad)
   followLight: false, // Enable follow light mode (name your light "followLight" before turn this on)
+  disableFollowCam: false; // Disable follow camera feature, camera to (0,0,-5)
   // Follow camera setups
   camInitDis: -5, // Initial camera distance
   camMaxDis: -7, // Maximum camera distance
@@ -251,7 +252,7 @@ const animationSet = {
   action1: "Wave",
   action2: "Dance",
   action3: "Cheer",
-  action4: "Attack(1h)",// This is special action which can be trigger while walking or running
+  action4: "Attack(1h)", // This is special action which can be trigger while walking or running
   //additinalAnimation: "additinalAnimationName",
 };
 ```
@@ -425,12 +426,12 @@ Activate different modes in Ecctrl by including the desired mode inside Ecctrl c
 This mode doesn't require keyboard controls and is designed for click-to-move or path-following features.
 
 ```js
-import { useGame } from 'ecctrl'
+import { useGame } from "ecctrl";
 // ...
-const setMoveToPoint = useGame((state) => state.setMoveToPoint)
+const setMoveToPoint = useGame((state) => state.setMoveToPoint);
 // ...
 // call function setMoveToPoint(), whenever character needs to move
-setMoveToPoint(point) // "point" is a vec3 value 
+setMoveToPoint(point); // "point" is a vec3 value
 ```
 
 ### (Optional) First-person view setup
@@ -442,7 +443,9 @@ If you would like to quickly set up a first-person mode, you can modify these pr
   camInitDis={-0.01} // camera intial position
   camMinDis={-0.01} // camera zoom in closest position
   camFollowMult={100} // give any big number here, so the camera follows the character instantly
-  autoBalance={false} // turn off auto balance since it's not useful for the first-person view
+  turnVelMultiplier={0} // character won't move before turn completed
+  turnSpeed={100} // give it big turning speed to prevent turning wait time
+  mode="CameraBasedMovement" // character's rotation will follow camera's rotation in this mode
 >
 ```
 

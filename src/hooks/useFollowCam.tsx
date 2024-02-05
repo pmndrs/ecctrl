@@ -5,6 +5,7 @@ import * as THREE from "three";
 
 export const useFollowCam = function (props: UseFollowCamProps) {
   const { scene, camera } = useThree();
+  const disableFollowCam = props.disableFollowCam;
   // const { rapier, world } = useRapier();
 
   let isMouseDown = false;
@@ -192,17 +193,17 @@ export const useFollowCam = function (props: UseFollowCamProps) {
     followCam.position.lerp(camLerpingPoint, delta * 4); // delta * 2 for rapier ray setup
   };
 
-  // Set camera position to (0,0,0)
+  // Set camera position to (0,0,0), if followCam is disabled set to default (0,0,-5)
   useEffect(() => {
-    camera.position.set(0, 0, 0);
-  }, []);
+    disableFollowCam ? camera.position.set(0, 0, -5) : camera.position.set(0, 0, 0)
+  }, [disableFollowCam]);
 
   useEffect(() => {
     // Prepare for camera ray intersect objects
     scene.children.forEach((child) => customTraverse(child));
 
     // Prepare for followCam and pivot point
-    followCam.add(camera);
+    disableFollowCam ? followCam.remove(camera) : followCam.add(camera);
     pivot.add(followCam);
 
     document.addEventListener("mousedown", () => { isMouseDown = true });
@@ -230,10 +231,11 @@ export const useFollowCam = function (props: UseFollowCamProps) {
 };
 
 export type UseFollowCamProps = {
-  camInitDis: number;
-  camMaxDis: number;
-  camMinDis: number;
-  camMoveSpeed: number;
-  camZoomSpeed: number;
-  camCollisionOffset: number;
+  disableFollowCam?: boolean;
+  camInitDis?: number;
+  camMaxDis?: number;
+  camMinDis?: number;
+  camMoveSpeed?: number;
+  camZoomSpeed?: number;
+  camCollisionOffset?: number;
 };

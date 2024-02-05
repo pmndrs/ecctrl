@@ -13,7 +13,7 @@ export default function ShotCube() {
 
   const clickToCreateBox = () => {
     if (document.pointerLockElement) {
-      camera.parent.getWorldPosition(position);
+      camera.parent?.getWorldPosition(position);
       const newMesh = (
         <mesh
           position={[position.x, position.y - 0.5, position.z]}
@@ -29,9 +29,9 @@ export default function ShotCube() {
   };
 
   useEffect(() => {
-    camera.parent.getWorldDirection(direction);
+    camera.parent?.getWorldDirection(direction);
     if (cubeMesh.length > 0) {
-      cubeRef.current.setLinvel(
+      cubeRef.current?.setLinvel(
         new THREE.Vector3(
           direction.x * 20,
           direction.y * 20 + 2,
