@@ -54,6 +54,8 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   characterInitDir = 0, // in rad
   followLight = false,
   disableFollowCam = false,
+  disableFollowCamPos = { x: 0, y: 0, z: -5 },
+  disableFollowCamTarget = { x: 0, y: 0, z: 0 },
   // Follow camera setups
   camInitDis = -5,
   camMaxDis = -7,
@@ -461,6 +463,8 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
    */
   const cameraSetups = {
     disableFollowCam,
+    disableFollowCamPos,
+    disableFollowCamTarget,
     camInitDis,
     camMaxDis,
     camMinDis,
@@ -1327,6 +1331,8 @@ export interface EcctrlProps extends RigidBodyProps {
   characterInitDir?: number;
   followLight?: boolean;
   disableFollowCam?: boolean;
+  disableFollowCamPos?: { x: number, y: number, z: number };
+  disableFollowCamTarget?: { x: number, y: number, z: number };
   // Follow camera setups
   camInitDis?: number;
   camMaxDis?: number;

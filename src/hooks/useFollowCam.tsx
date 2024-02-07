@@ -6,6 +6,8 @@ import * as THREE from "three";
 export const useFollowCam = function (props: UseFollowCamProps) {
   const { scene, camera } = useThree();
   const disableFollowCam = props.disableFollowCam;
+  const disableFollowCamPos = props.disableFollowCamPos;
+  const disableFollowCamTarget = props.disableFollowCamTarget;
   // const { rapier, world } = useRapier();
 
   let isMouseDown = false;
@@ -193,9 +195,14 @@ export const useFollowCam = function (props: UseFollowCamProps) {
     followCam.position.lerp(camLerpingPoint, delta * 4); // delta * 2 for rapier ray setup
   };
 
-  // Set camera position to (0,0,0), if followCam is disabled set to default (0,0,-5)
+  // Set camera position to (0,0,0), if followCam is disabled set to disableFollowCamPos (default 0,0,-5)
   useEffect(() => {
-    disableFollowCam ? camera.position.set(0, 0, -5) : camera.position.set(0, 0, 0)
+    if (disableFollowCam) {
+      camera.position.set(disableFollowCamPos.x, disableFollowCamPos.y, disableFollowCamPos.z)
+      camera.lookAt(new THREE.Vector3(disableFollowCamTarget.x, disableFollowCamTarget.y, disableFollowCamTarget.z))
+    } else {
+      camera.position.set(0, 0, 0)
+    }
   }, [disableFollowCam]);
 
   useEffect(() => {
@@ -232,6 +239,8 @@ export const useFollowCam = function (props: UseFollowCamProps) {
 
 export type UseFollowCamProps = {
   disableFollowCam?: boolean;
+  disableFollowCamPos?: { x: number, y: number, z: number };
+  disableFollowCamTarget?: { x: number, y: number, z: number };
   camInitDis?: number;
   camMaxDis?: number;
   camMinDis?: number;
