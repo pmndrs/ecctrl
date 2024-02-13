@@ -77,6 +77,9 @@ export const useFollowCam = function (props: UseFollowCamProps) {
     return false;
   };
 
+  /**
+   * Touch events
+   */
   // Touch end event
   const onTouchEnd = (e: TouchEvent) => {
     previousTouch1 = null
@@ -134,7 +137,25 @@ export const useFollowCam = function (props: UseFollowCamProps) {
     previousTouch2 = touch2;
   }
 
-  // Custom traverse function
+  /**
+   * Gamepad second joystick event
+   */
+  const joystickCamMove = (movementX: number, movementY: number) => {
+    pivot.rotation.y -= movementX * 0.005 * camMoveSpeed * 3;
+    const vy = followCam.rotation.x + movementY * 0.005 * camMoveSpeed * 3;
+
+    cameraDistance = followCam.position.length();
+
+    if (vy >= -0.5 && vy <= 1.5) {
+      followCam.rotation.x = vy;
+      followCam.position.y = -cameraDistance * Math.sin(-vy);
+      followCam.position.z = -cameraDistance * Math.cos(vy);
+    }
+  }
+
+  /**
+   * Custom traverse function
+   */
   // Prepare intersect objects for camera collision
   function customTraverse(object: THREE.Object3D) {
     // Chekc if the object's userData camExcludeCollision is true
@@ -156,6 +177,9 @@ export const useFollowCam = function (props: UseFollowCamProps) {
     });
   }
 
+  /**
+   * Camera collision detection function
+   */
   const cameraCollisionDetect = (delta: number) => {
     // Update collision detect ray origin and pointing direction
     // Which is from pivot point to camera position
@@ -234,7 +258,7 @@ export const useFollowCam = function (props: UseFollowCamProps) {
     };
   });
 
-  return { pivot, followCam, cameraCollisionDetect };
+  return { pivot, followCam, cameraCollisionDetect, joystickCamMove };
 };
 
 export type UseFollowCamProps = {

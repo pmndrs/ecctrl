@@ -112,12 +112,15 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   animated = false,
   // Mode setups
   mode = null,
+  // Controller setups
+  controllerKeys = { forward: 12, backward: 13, leftward: 14, rightward: 15, jump: 2, action1: 11, action2: 3, action3: 1, action4: 0 },
   // Other rigibody props from parent
   ...props
 }: EcctrlProps, ref) => {
   const characterRef = ref as RefObject<RapierRigidBody> || useRef<RapierRigidBody>()
   const characterModelRef = useRef<THREE.Group>();
   const characterModelIndicator = useMemo(() => new THREE.Object3D(), [])
+  const defaultControllerKeys = { forward: 12, backward: 13, leftward: 14, rightward: 15, jump: 2, action1: 11, action2: 3, action3: 1, action4: 0 }
 
   /**
    * Mode setup
@@ -436,6 +439,64 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
    * Joystick controls setup
    */
   const getJoystickValues = useJoystickControls(state => state.getJoystickValues)
+  const pressButton1 = useJoystickControls((state) => state.pressButton1)
+  const pressButton2 = useJoystickControls((state) => state.pressButton2)
+  const pressButton3 = useJoystickControls((state) => state.pressButton3)
+  const pressButton4 = useJoystickControls((state) => state.pressButton4)
+  const pressButton5 = useJoystickControls((state) => state.pressButton5)
+  const releaseAllButtons = useJoystickControls((state) => state.releaseAllButtons)
+  const setJoystick = useJoystickControls((state) => state.setJoystick)
+  const resetJoystick = useJoystickControls((state) => state.resetJoystick)
+
+  /**
+   * Gamepad controls setup
+   */
+  let controllerIndex: number = null
+  const gamepadKeys = { forward: false, backward: false, leftward: false, rightward: false };
+  const gamepadJoystickVec2 = useMemo(() => new THREE.Vector2(), [])
+  let gamepadJoystickDis: number = 0
+  let gamepadJoystickAng: number = 0
+  const gamepadConnect = (e: any) => { controllerIndex = e.gamepad.index }
+  const gamepadDisconnect = () => { controllerIndex = null }
+  const mergedKeys = useMemo(() => Object.assign({}, defaultControllerKeys, controllerKeys), [controllerKeys])
+  const handleButtons = (buttons: readonly GamepadButton[]) => {
+    gamepadKeys.forward = buttons[mergedKeys.forward].pressed
+    gamepadKeys.backward = buttons[mergedKeys.backward].pressed
+    gamepadKeys.leftward = buttons[mergedKeys.leftward].pressed
+    gamepadKeys.rightward = buttons[mergedKeys.rightward].pressed
+
+    // Gamepad trigger the EcctrlJoystick buttons to play animations
+    if (buttons[mergedKeys.action4].pressed) {
+      pressButton2()
+    } else if (buttons[mergedKeys.action3].pressed) {
+      pressButton4()
+    } else if (buttons[mergedKeys.jump].pressed) {
+      pressButton1()
+    } else if (buttons[mergedKeys.action2].pressed) {
+      pressButton3()
+    } else if (buttons[mergedKeys.action1].pressed) {
+      pressButton5()
+    } else {
+      releaseAllButtons()
+    }
+  }
+  const handleSticks = (axes: readonly number[]) => {
+    // Gamepad first joystick trigger the EcctrlJoystick event to move the character
+    if (Math.abs(axes[0]) > 0 || Math.abs(axes[1]) > 0) {
+      gamepadJoystickVec2.set(axes[0], -axes[1])
+      gamepadJoystickDis = Math.min(Math.sqrt(Math.pow(gamepadJoystickVec2.x, 2) + Math.pow(gamepadJoystickVec2.y, 2)), 1)
+      gamepadJoystickAng = gamepadJoystickVec2.angle()
+      const runState = gamepadJoystickDis > 0.7
+      setJoystick(gamepadJoystickDis, gamepadJoystickAng, runState)
+    } else {
+      resetJoystick()
+    }
+    // Gamepad second joystick trigger the useFollowCam event to move the camera
+    if (Math.abs(axes[2]) > 0 || Math.abs(axes[3]) > 0) {
+      // console.log(axes[2], axes[3]);
+      joystickCamMove(axes[2], axes[3])
+    }
+  }
 
   // can jump setup
   let canJump = false;
@@ -476,7 +537,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   /**
    * Load camera pivot and character move preset
    */
-  const { pivot, cameraCollisionDetect } =
+  const { pivot, cameraCollisionDetect, joystickCamMove } =
     useFollowCam(cameraSetups);
   const pivotPosition = useMemo(() => new THREE.Vector3(), []);
   const modelEuler = useMemo(() => new THREE.Euler(), []);
@@ -716,12 +777,14 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
    * Character sleep function
    */
   const sleepCharacter = () => {
-    if (document.visibilityState === "hidden") {
-      characterRef.current.sleep()
-    } else {
-      setTimeout(() => {
-        characterRef.current.wakeUp()
-      }, wakeUpDelay)
+    if (characterRef.current) {
+      if (document.visibilityState === "hidden") {
+        characterRef.current.sleep()
+      } else {
+        setTimeout(() => {
+          characterRef.current.wakeUp()
+        }, wakeUpDelay)
+      }
     }
   }
 
@@ -878,8 +941,10 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
 
     // Reset character quaternion
     return (() => {
-      characterModelRef.current?.quaternion.set(0, 0, 0, 1);
-      characterRef.current?.setRotation({ x: 0, y: 0, z: 0, w: 1 }, false);
+      if (characterRef.current && characterModelRef.current) {
+        characterModelRef.current.quaternion.set(0, 0, 0, 1);
+        characterRef.current.setRotation({ x: 0, y: 0, z: 0, w: 1 }, false);
+      }
     })
   }, [autoBalance]);
 
@@ -892,9 +957,13 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     pivot.rotation.z = camInitDir.z
 
     window.addEventListener("visibilitychange", sleepCharacter);
+    window.addEventListener("gamepadconnected", gamepadConnect);
+    window.addEventListener("gamepaddisconnected", gamepadDisconnect);
 
     return () => {
       window.removeEventListener("visibilitychange", sleepCharacter);
+      window.removeEventListener("gamepadconnected", gamepadConnect);
+      window.removeEventListener("gamepaddisconnected", gamepadDisconnect);
     }
   }, [])
 
@@ -912,6 +981,18 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
       dirLight.position.y = currentPos.y + followLightPos.y;
       dirLight.position.z = currentPos.z + followLightPos.z;
       dirLight.target = characterModelRef.current;
+    }
+
+    /**
+     * Getting all gamepad control values
+     */
+    if (controllerIndex !== null) {
+      const gamepad = navigator.getGamepads()[controllerIndex]
+      handleButtons(gamepad.buttons)
+      handleSticks(gamepad.axes)
+      // Getting moving directions (IIFE)
+      modelEuler.y = ((movingDirection) => movingDirection === null ? modelEuler.y : movingDirection)
+        (getMovingDirection(gamepadKeys.forward, gamepadKeys.backward, gamepadKeys.leftward, gamepadKeys.rightward, pivot))
     }
 
     /**
@@ -941,7 +1022,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
       (getMovingDirection(forward, backward, leftward, rightward, pivot))
 
     // Move character to the moving direction
-    if (forward || backward || leftward || rightward)
+    if (forward || backward || leftward || rightward || gamepadKeys.forward || gamepadKeys.backward || gamepadKeys.leftward || gamepadKeys.rightward)
       moveCharacter(delta, run, slopeAngle, movingObjectVelocity);
 
     // Character current velocity
@@ -1085,7 +1166,13 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
           // Apply opposite drage force to the stading rigid body, body type 0
           // Character moving and unmoving should provide different drag force to the platform
           if (rayHitObjectBodyType === 0) {
-            if (!forward && !backward && !leftward && !rightward && canJump && joystickDis === 0 && !isPointMoving) {
+            if (
+              !forward && !backward && !leftward && !rightward &&
+              canJump &&
+              joystickDis === 0 &&
+              !isPointMoving &&
+              !gamepadKeys.forward && !gamepadKeys.backward && !gamepadKeys.leftward && !gamepadKeys.rightward
+            ) {
               movingObjectDragForce.copy(bodyContactForce)
                 .multiplyScalar(delta)
                 .multiplyScalar(Math.min(1, 1 / massRatio)) // Scale up/down base on different masses ratio
@@ -1191,7 +1278,13 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     /**
      * Apply drag force if it's not moving
      */
-    if (!forward && !backward && !leftward && !rightward && canJump && joystickDis === 0 && !isPointMoving) {
+    if (
+      !forward && !backward && !leftward && !rightward &&
+      canJump &&
+      joystickDis === 0 &&
+      !isPointMoving &&
+      !gamepadKeys.forward && !gamepadKeys.backward && !gamepadKeys.leftward && !gamepadKeys.rightward
+    ) {
       // not on a moving object
       if (!isOnMovingObject) {
         dragForce.set(
@@ -1249,21 +1342,22 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
      * Apply all the animations
      */
     if (animated) {
-      if (
-        !forward &&
-        !backward &&
-        !leftward &&
-        !rightward &&
-        !jump &&
-        !button1Pressed &&
-        joystickDis === 0 &&
+      if (!forward && !backward && !leftward && !rightward && !jump &&
+        !button1Pressed && joystickDis === 0 &&
         !isPointMoving &&
+        !gamepadKeys.forward && !gamepadKeys.backward && !gamepadKeys.leftward && !gamepadKeys.rightward &&
         canJump
       ) {
         idleAnimation();
       } else if ((jump || button1Pressed) && canJump) {
         jumpAnimation();
-      } else if (canJump && (forward || backward || leftward || rightward || joystickDis > 0 || isPointMoving)) {
+      } else if (canJump &&
+        (
+          forward || backward || leftward || rightward ||
+          joystickDis > 0 ||
+          isPointMoving ||
+          gamepadKeys.forward || gamepadKeys.backward || gamepadKeys.leftward || gamepadKeys.rightward
+        )) {
         (run || runState) ? runAnimation() : walkAnimation();
       } else if (!canJump) {
         jumpIdleAnimation();
@@ -1394,6 +1488,8 @@ export interface EcctrlProps extends RigidBodyProps {
   animated?: boolean;
   // Mode setups
   mode?: string;
+  // Controller setups
+  controllerKeys?: { forward?: number, backward?: number, leftward?: number, rightward?: number, jump?: number, action1?: number, action2?: number, action3?: number, action4?: number }
   // Other rigibody props from parent
   props?: RigidBodyProps;
 };

@@ -175,6 +175,8 @@ EcctrlProps: {
   animated: false, // Enable animation
   // Mode setups
   mode: null, // Activate different ecctrl modes
+  // Customizable controller key setups
+  controllerKeys: { forward: 12, backward: 13, leftward: 14, rightward: 15, jump: 2, action1: 11, action2: 3, action3: 1, action4: 0 },
   // Other rigibody props from parent
   // Rigidbody props can be used here,
   // such as position, friction, gravityScale, etc.
@@ -196,6 +198,8 @@ If you want to apply character animations, prepare the character url and customi
 const characterURL = "./ReplaceWithYourCharacterURL";
 
 // Prepare and rename your character animations here
+// Note: idle, walk, run, jump, jumpIdle, jumpLand and fall names are essential
+// Missing any of these names might result in an error: "cannot read properties of undifined (reading 'reset')"
 const animationSet = {
   idle: "Idle",
   walk: "Walk",
