@@ -971,6 +971,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     // Character current position
     if (characterRef.current) {
       currentPos.copy(characterRef.current.translation() as THREE.Vector3);
+      (characterRef.current.userData as userDataType).canJump = canJump
     }
 
     /**
@@ -1377,6 +1378,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
       friction={props.friction || -0.5}
       onContactForce={(e) => bodyContactForce.set(e.totalForce.x, e.totalForce.y, e.totalForce.z)}
       onCollisionExit={() => bodyContactForce.set(0, 0, 0)}
+      userData={{ canJump: false }}
       {...props}
     >
       <CapsuleCollider
@@ -1493,3 +1495,7 @@ export interface EcctrlProps extends RigidBodyProps {
   // Other rigibody props from parent
   props?: RigidBodyProps;
 };
+
+export interface userDataType {
+  canJump?: boolean
+}
