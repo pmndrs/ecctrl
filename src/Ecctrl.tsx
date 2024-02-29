@@ -599,6 +599,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   /**
    * Character moving function
    */
+  let characterRotated = true;
   const moveCharacter = (
     _: number,
     run: boolean,
@@ -684,7 +685,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     /**
      * Check if character complete turned to the wanted direction
      */
-    const characterRotated =
+    characterRotated =
       Math.sin(characterModelIndicator.rotation.y).toFixed(3) ==
       Math.sin(modelEuler.y).toFixed(3);
 
@@ -971,7 +972,11 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     // Character current position
     if (characterRef.current) {
       currentPos.copy(characterRef.current.translation() as THREE.Vector3);
-      (characterRef.current.userData as userDataType).canJump = canJump
+      // Assign userDate properties
+      (characterRef.current.userData as userDataType).canJump = canJump;
+      (characterRef.current.userData as userDataType).slopeAngle = slopeAngle;
+      (characterRef.current.userData as userDataType).characterRotated = characterRotated;
+      (characterRef.current.userData as userDataType).isOnMovingObject = isOnMovingObject;
     }
 
     /**
@@ -1497,5 +1502,8 @@ export interface EcctrlProps extends RigidBodyProps {
 };
 
 export interface userDataType {
-  canJump?: boolean
+  canJump?: boolean;
+  slopeAngle?: number | null;
+  characterRotated?: boolean;
+  isOnMovingObject?: boolean;
 }
