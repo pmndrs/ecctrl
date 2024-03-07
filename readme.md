@@ -449,7 +449,7 @@ If you would like to quickly set up a first-person mode, you can modify these pr
   camInitDis={-0.01} // camera intial position
   camMinDis={-0.01} // camera zoom in closest position
   camFollowMult={100} // give any big number here, so the camera follows the character instantly
-  turnVelMultiplier={0} // character won't move before turn completed
+  turnVelMultiplier={1} // Turning speed same as moving speed
   turnSpeed={100} // give it big turning speed to prevent turning wait time
   mode="CameraBasedMovement" // character's rotation will follow camera's rotation in this mode
 >

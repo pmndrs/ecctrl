@@ -33,6 +33,15 @@ const build = defineConfig({
       },
     },
   },
+  plugins: [
+    {
+      name: 'vite-tsc',
+      generateBundle(options) {
+        const ext = options.format === 'es' ? 'ts' : 'cts'
+        this.emitFile({ type: 'asset', fileName: `Ecctrl.d.${ext}`, source: `export * from '../src/Ecctrl.tsx'` })
+      },
+    },
+  ]
 })
 
 export default process.argv[2] ? build : dev
