@@ -4,7 +4,7 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 
 export const useFollowCam = function (props: UseFollowCamProps) {
-  const { scene, camera } = useThree();
+  const { scene, camera, gl } = useThree();
   const disableFollowCam = props.disableFollowCam;
   const disableFollowCamPos = props.disableFollowCamPos;
   const disableFollowCamTarget = props.disableFollowCamTarget;
@@ -237,22 +237,22 @@ export const useFollowCam = function (props: UseFollowCamProps) {
     disableFollowCam ? followCam.remove(camera) : followCam.add(camera);
     pivot.add(followCam);
 
-    document.addEventListener("mousedown", () => { isMouseDown = true });
-    document.addEventListener("mouseup", () => { isMouseDown = false });
-    document.addEventListener("mousemove", onDocumentMouseMove);
-    document.addEventListener("mousewheel", onDocumentMouseWheel);
+    gl.domElement.addEventListener("mousedown", () => { isMouseDown = true });
+    gl.domElement.addEventListener("mouseup", () => { isMouseDown = false });
+    gl.domElement.addEventListener("mousemove", onDocumentMouseMove);
+    gl.domElement.addEventListener("mousewheel", onDocumentMouseWheel);
     // Touch event
-    document.addEventListener("touchend", onTouchEnd);
-    document.addEventListener("touchmove", onTouchMove, { passive: false });
+    gl.domElement.addEventListener("touchend", onTouchEnd);
+    gl.domElement.addEventListener("touchmove", onTouchMove, { passive: false });
 
     return () => {
-      document.removeEventListener("mousedown", () => { isMouseDown = true });
-      document.removeEventListener("mouseup", () => { isMouseDown = false });
-      document.removeEventListener("mousemove", onDocumentMouseMove);
-      document.removeEventListener("mousewheel", onDocumentMouseWheel);
+      gl.domElement.removeEventListener("mousedown", () => { isMouseDown = true });
+      gl.domElement.removeEventListener("mouseup", () => { isMouseDown = false });
+      gl.domElement.removeEventListener("mousemove", onDocumentMouseMove);
+      gl.domElement.removeEventListener("mousewheel", onDocumentMouseWheel);
       // Touch event
-      document.removeEventListener("touchend", onTouchEnd);
-      document.removeEventListener("touchmove", onTouchMove);
+      gl.domElement.removeEventListener("touchend", onTouchEnd);
+      gl.domElement.removeEventListener("touchmove", onTouchMove);
       // Remove camera from followCam
       followCam.remove(camera);
     };
