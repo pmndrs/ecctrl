@@ -170,7 +170,8 @@ EcctrlProps: {
   autoBalance: true, // Enable auto-balance
   autoBalanceSpringK: 0.3, // Auto-balance spring constant
   autoBalanceDampingC: 0.03, // Auto-balance damping coefficient
-  autoBalanceDampingOnY: 0.02, // Auto-balance damping on Y-axis
+  autoBalanceSpringOnY: 0.5, // Auto-balance spring on Y-axis 
+  autoBalanceDampingOnY: 0.015, // Auto-balance damping on Y-axis 
   // Animation temporary setups
   animated: false, // Enable animation
   // Mode setups
