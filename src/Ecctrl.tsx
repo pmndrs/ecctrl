@@ -1322,7 +1322,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     if (characterRef.current) {
       if (currentVel.y < fallingMaxVel && characterRef.current.gravityScale() !== 0) {
         characterRef.current.setGravityScale(0, true)
-      } else if (isFalling && characterRef.current.gravityScale() !== fallingGravityScale) {
+      } else if (isFalling && currentVel.y > fallingMaxVel && characterRef.current.gravityScale() !== fallingGravityScale) {
         characterRef.current.setGravityScale(fallingGravityScale, true)
       } else if (!isFalling && characterRef.current.gravityScale() !== initialGravityScale) {
         characterRef.current.setGravityScale(initialGravityScale, true)
