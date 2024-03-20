@@ -12,6 +12,12 @@ body,
     rgba(253, 228, 255, 1) 0%,
     rgba(124, 156, 254, 1) 100%
   );
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  touch-action: none;
 }
 
 .controlKeys {

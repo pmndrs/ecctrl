@@ -1317,15 +1317,22 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     isFalling = (currentVel.y < 0 && !canJump) ? true : false
 
     /**
-     * Apply larger gravity when falling
+     * Setup max falling speed && extra falling gravity
+     * Remove gravity if falling speed higher than fallingMaxVel (negetive number so use "<")
      */
     if (characterRef.current) {
-      if (currentVel.y < fallingMaxVel && characterRef.current.gravityScale() !== 0) {
-        characterRef.current.setGravityScale(0, true)
-      } else if (isFalling && currentVel.y > fallingMaxVel && characterRef.current.gravityScale() !== fallingGravityScale) {
-        characterRef.current.setGravityScale(fallingGravityScale, true)
-      } else if (!isFalling && characterRef.current.gravityScale() !== initialGravityScale) {
-        characterRef.current.setGravityScale(initialGravityScale, true)
+      if (currentVel.y < fallingMaxVel) {
+        if (characterRef.current.gravityScale() !== 0) {
+          characterRef.current.setGravityScale(0, true)
+        }
+      } else {
+        if (!isFalling && characterRef.current.gravityScale() !== initialGravityScale) {
+          // Apply initial gravity after landed
+          characterRef.current.setGravityScale(initialGravityScale, true)
+        } else if (isFalling && characterRef.current.gravityScale() !== fallingGravityScale) {
+          // Apply larger gravity when falling (if initialGravityScale === fallingGravityScale, won't trigger this)
+          characterRef.current.setGravityScale(fallingGravityScale, true)
+        }
       }
     }
 
