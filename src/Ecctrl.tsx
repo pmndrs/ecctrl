@@ -60,7 +60,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   camInitDis = -5,
   camMaxDis = -7,
   camMinDis = -0.7,
-  camInitDir = { x: 0, y: 0, z: 0 }, // in rad
+  camInitDir = { x: 0, y: 0 }, // in rad
   camTargetPos = { x: 0, y: 0, z: 0 },
   camMoveSpeed = 1,
   camZoomSpeed = 1,
@@ -529,6 +529,7 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
     camInitDis,
     camMaxDis,
     camMinDis,
+    camInitDir,
     camMoveSpeed,
     camZoomSpeed,
     camCollisionOffset
@@ -952,10 +953,6 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
   useEffect(() => {
     // Initialize character facing direction
     modelEuler.y = characterInitDir
-    // Initialize camera facing direction
-    pivot.rotation.x = camInitDir.x
-    pivot.rotation.y = camInitDir.y
-    pivot.rotation.z = camInitDir.z
 
     window.addEventListener("visibilitychange", sleepCharacter);
     window.addEventListener("gamepadconnected", gamepadConnect);
@@ -1445,7 +1442,7 @@ export interface EcctrlProps extends RigidBodyProps {
   camInitDis?: number;
   camMaxDis?: number;
   camMinDis?: number;
-  camInitDir?: { x: number, y: number, z: number };
+  camInitDir?: { x: number, y: number };
   camTargetPos?: { x: number, y: number, z: number };
   camMoveSpeed?: number;
   camZoomSpeed?: number;

@@ -17,6 +17,7 @@ export const useFollowCam = function (props: UseFollowCamProps) {
   let originZDis = props.camInitDis;
   const camMaxDis = props.camMaxDis;
   const camMinDis = props.camMinDis;
+  const camInitDir = props.camInitDir;
   const camMoveSpeed = props.camMoveSpeed;
   const camZoomSpeed = props.camZoomSpeed;
   const camCollisionOffset = props.camCollisionOffset;
@@ -219,6 +220,12 @@ export const useFollowCam = function (props: UseFollowCamProps) {
     followCam.position.lerp(camLerpingPoint, delta * 4); // delta * 2 for rapier ray setup
   };
 
+  // Initialize camera facing direction
+  useEffect(() => {
+    pivot.rotation.y = camInitDir.y;
+    followCam.rotation.x = camInitDir.x
+  }, [])
+
   // Set camera position to (0,0,0), if followCam is disabled set to disableFollowCamPos (default 0,0,-5)
   useEffect(() => {
     if (disableFollowCam) {
@@ -268,6 +275,7 @@ export type UseFollowCamProps = {
   camInitDis?: number;
   camMaxDis?: number;
   camMinDis?: number;
+  camInitDir?: { x: number, y: number};
   camMoveSpeed?: number;
   camZoomSpeed?: number;
   camCollisionOffset?: number;

@@ -13,9 +13,21 @@ import DynamicPlatforms from "./DynamicPlatforms";
 import ShotCube from "./ShotCube";
 import { useControls } from "leva";
 import CharacterModel from "./CharacterModel";
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 export default function Experience() {
+  /**
+   * Delay physics activate
+   */
+  const [pausedPhysics, setPausedPhysics] = useState(true);
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setPausedPhysics(false);
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, []);
+
   /**
    * Debug settings
    */
@@ -54,7 +66,7 @@ export default function Experience() {
 
       <Lights />
 
-      <Physics debug={physics} timeStep="vary">
+      <Physics debug={physics} timeStep="vary" paused={pausedPhysics}>
         {/* Keyboard preset */}
         <KeyboardControls map={keyboardMap}>
           {/* Character Control */}

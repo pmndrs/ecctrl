@@ -124,7 +124,7 @@ EcctrlProps: {
   camInitDis: -5, // Initial camera distance
   camMaxDis: -7, // Maximum camera distance
   camMinDis: -0.7, // Minimum camera distance
-  camInitDir: { x: 0, y: 0, z: 0 }, // Camera initial rotation direction (in rad)
+  camInitDir: { x: 0, y: 0 }, // Camera initial rotation direction (in rad)
   camTargetPos: { x: 0, y: 0, z: 0 }, // Camera target position
   camMoveSpeed: 1, // Camera moving speed multiplier
   camZoomSpeed: 1, // Camera zooming speed multiplier
