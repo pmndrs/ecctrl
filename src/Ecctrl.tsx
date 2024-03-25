@@ -1090,13 +1090,15 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
       rayCast,
       rayLength,
       true,
+      // this exclude sensor 
+      16,
       null,
       null,
-      // I have no idea
-      characterRef.current as unknown as Collider,
       characterRef.current,
-      // this exclude with sensor collider
-      ((collider) => !collider.isSensor())
+      // this exclude any collider with userData: excludeEcctrlRay
+      ((collider: Collider) => (
+        collider.parent().userData && !(collider.parent().userData as userDataType).excludeEcctrlRay
+      ))
     );
     /**Test shape ray */
     // rayHit = world.castShape(
@@ -1217,13 +1219,15 @@ const Ecctrl = forwardRef<RapierRigidBody, EcctrlProps>(({
       slopeRayCast,
       slopeRayLength,
       true,
+      // this exclude sensor 
+      16,
       null,
       null,
-      // Still no idea
-      characterRef.current as unknown as Collider,
       characterRef.current,
-      // this exclude with sensor collider
-      ((collider) => !collider.isSensor())
+      // this exclude any collider with userData: excludeEcctrlRay
+      ((collider: Collider) => (
+        collider.parent().userData && !(collider.parent().userData as userDataType).excludeEcctrlRay
+      ))
     );
 
     // Calculate slope angle
@@ -1510,4 +1514,5 @@ export interface userDataType {
   slopeAngle?: number | null;
   characterRotated?: boolean;
   isOnMovingObject?: boolean;
+  excludeEcctrlRay?: boolean;
 }
