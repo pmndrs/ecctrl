@@ -20,6 +20,7 @@ import type {
   RayColliderToi,
   Vector,
 } from "@dimforge/rapier3d-compat";
+import React from "react";
 
 export { EcctrlAnimation } from "./EcctrlAnimation";
 export { useFollowCam } from "./hooks/useFollowCam";
