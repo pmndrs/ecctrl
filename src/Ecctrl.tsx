@@ -1053,9 +1053,10 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
         true
       );
 
+      characterMassForce.y *= jumpForceToGroundMult;
+
       // Apply jump force downward to the standing platform
       if (!disableExternalRayForces) {
-        characterMassForce.y *= jumpForceToGroundMult;
         rayHit.collider
           .parent()
           ?.applyImpulseAtPoint(characterMassForce, standingForcePoint, true);
