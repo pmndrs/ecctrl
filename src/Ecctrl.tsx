@@ -1131,7 +1131,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
     /**
      * Ray detect if on rigid body or dynamic platform, then apply the linear velocity and angular velocity to character
      */
-    if (rayHit && canJump && !disableRay) {
+    if (rayHit && canJump) {
       if (rayHit.collider.parent()) {
         // Getting the standing force apply point
         standingForcePoint.set(
