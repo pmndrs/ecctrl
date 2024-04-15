@@ -1271,7 +1271,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
     /**
      * Apply floating force
      */
-    if (!disableRay && rayHit != null && canJump && rayHit.collider.parent()) {
+    if (rayHit != null && canJump && rayHit.collider.parent()) {
       floatingForce =
         springK * (floatingDis - rayHit.toi) -
         characterRef.current.linvel().y * dampingC;
@@ -1282,9 +1282,12 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
 
       // Apply opposite force to standing object (gravity g in rapier is 0.11 ?_?)
       characterMassForce.set(0, floatingForce > 0 ? -floatingForce : 0, 0);
-      rayHit.collider
+
+      if (!disableRay) {
+        rayHit.collider
         .parent()
         ?.applyImpulseAtPoint(characterMassForce, standingForcePoint, true);
+      }
     }
 
     /**
