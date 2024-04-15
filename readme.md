@@ -155,7 +155,7 @@ EcctrlProps: {
   rayHitForgiveness: 0.1, // Ray hit forgiveness
   rayLength: capsuleRadius + 2, // Ray length
   rayDir: { x: 0, y: -1, z: 0 }, // Ray direction
-  disableRay: false, // Disable Ray hits
+  disableExternalRayForces: false, // Disable applied ray hit forces 
   floatingDis: capsuleRadius + floatHeight, // Floating distance
   springK: 1.2, // Spring constant
   dampingC: 0.08, // Damping coefficient

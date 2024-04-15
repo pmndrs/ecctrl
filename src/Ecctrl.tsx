@@ -92,7 +92,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
   rayHitForgiveness = 0.1,
   rayLength = capsuleRadius + 2,
   rayDir = { x: 0, y: -1, z: 0 },
-  disableRay = false,
+  disableExternalRayForces = false,
   floatingDis = capsuleRadius + floatHeight,
   springK = 1.2,
   dampingC = 0.08,
@@ -1054,7 +1054,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
       );
 
       // Apply jump force downward to the standing platform
-      if (!disableRay) {
+      if (!disableExternalRayForces) {
         characterMassForce.y *= jumpForceToGroundMult;
         rayHit.collider
           .parent()
@@ -1280,13 +1280,13 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
         false
       );
 
-      // Apply opposite force to standing object (gravity g in rapier is 0.11 ?_?)
       characterMassForce.set(0, floatingForce > 0 ? -floatingForce : 0, 0);
 
-      if (!disableRay) {
+      // Apply opposite force to standing object (gravity g in rapier is 0.11 ?_?)
+      if (!disableExternalRayForces) {
         rayHit.collider
-        .parent()
-        ?.applyImpulseAtPoint(characterMassForce, standingForcePoint, true);
+          .parent()
+          ?.applyImpulseAtPoint(characterMassForce, standingForcePoint, true);
       }
     }
 
@@ -1485,7 +1485,7 @@ export interface EcctrlProps extends RigidBodyProps {
   rayHitForgiveness?: number;
   rayLength?: number;
   rayDir?: { x: number; y: number; z: number };
-  disableRay?: boolean;
+  disableExternalRayForces?: boolean;
   floatingDis?: number;
   springK?: number;
   dampingC?: number;
