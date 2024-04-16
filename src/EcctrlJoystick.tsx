@@ -19,6 +19,8 @@ const JoystickComponents = (props: EcctrlJoystickProps) => {
     const joystickMovementVec2 = useMemo(() => new THREE.Vector2(), [])
 
     const [windowSize, setWindowSize] = useState({ innerHeight, innerWidth })
+    const [isMouseDown, setIsMouseDown] = useState(false);
+
     const joystickDiv: HTMLDivElement = document.querySelector("#ecctrl-joystick")
 
     /**
@@ -57,10 +59,16 @@ const JoystickComponents = (props: EcctrlJoystickProps) => {
     const resetJoystick = useJoystickControls((state) => state.resetJoystick)
 
     // Touch move function
-    const onTouchMove = useCallback((e: TouchEvent) => {
+    const onTouchMove = useCallback((e: TouchEvent | MouseEvent) => {
         e.preventDefault();
         e.stopImmediatePropagation();
-        const touch1 = e.targetTouches[0];
+        
+        const touch = (e as TouchEvent).targetTouches?.[0];
+        const mouse = e as MouseEvent;
+
+        if (!isMouseDown && !touch) return;
+
+        const touch1 = touch || mouse;
 
         const touch1MovementX = touch1.pageX - joystickCenterX
         const touch1MovementY = -(touch1.pageY - joystickCenterY)
@@ -81,10 +89,10 @@ const JoystickComponents = (props: EcctrlJoystickProps) => {
 
         // Pass valus to joystick store
         setJoystick(joystickDis, joystickAng, runState)
-    }, [api, windowSize])
+    }, [api, windowSize, isMouseDown])
 
     // Touch end function
-    const onTouchEnd = (e: TouchEvent) => {
+    const onTouchEnd = () => {
         // Reset animations
         api.start({
             topRotationX: 0,
@@ -102,6 +110,16 @@ const JoystickComponents = (props: EcctrlJoystickProps) => {
         setWindowSize({ innerHeight: window.innerHeight, innerWidth: window.innerWidth })
     }
 
+    const onMouseUp = () => {
+        setIsMouseDown(false);
+        onTouchEnd();
+    };
+
+    const onMouseDown = (e: MouseEvent) => {
+        setIsMouseDown(true);
+        onTouchMove(e);
+    };
+
     useEffect(() => {
         const joystickPositionX = joystickDiv.getBoundingClientRect().x
         const joystickPositionY = joystickDiv.getBoundingClientRect().y
@@ -116,11 +134,20 @@ const JoystickComponents = (props: EcctrlJoystickProps) => {
         joystickDiv.addEventListener("touchmove", onTouchMove, { passive: false })
         joystickDiv.addEventListener("touchend", onTouchEnd)
 
+        joystickDiv.addEventListener("mousedown", onMouseDown);
+        joystickDiv.addEventListener("mousemove", onTouchMove);
+        joystickDiv.addEventListener("mouseup", onMouseUp);
+        window.addEventListener("mouseup", onMouseUp)
+
         window.visualViewport.addEventListener("resize", onWindowResize)
 
         return () => {
             joystickDiv.removeEventListener("touchmove", onTouchMove)
             joystickDiv.removeEventListener("touchend", onTouchEnd)
+            joystickDiv.removeEventListener("mousedown", onMouseDown);
+            joystickDiv.removeEventListener("mousemove", onTouchMove);
+            joystickDiv.removeEventListener("mouseup", onMouseUp);
+            window.removeEventListener("mouseup", onMouseUp)
             window.visualViewport.removeEventListener("resize", onWindowResize)
         }
     })
