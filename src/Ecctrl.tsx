@@ -611,14 +611,18 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
     /**
      * Setup moving direction
      */
-    // Only apply slope extra force when slope angle is between 0.2 and slopeMaxAngle, actualSlopeAngle < slopeMaxAngle
+    // Only apply slope angle to moving direction
+    // when slope angle is between 0.2rad and slopeMaxAngle, 
+    // and actualSlopeAngle < slopeMaxAngle
     if (
       actualSlopeAngle < slopeMaxAngle &&
       Math.abs(slopeAngle) > 0.2 &&
       Math.abs(slopeAngle) < slopeMaxAngle
     ) {
       movingDirection.set(0, Math.sin(slopeAngle), Math.cos(slopeAngle));
-    } else if (actualSlopeAngle >= slopeMaxAngle) {
+    }
+    // If on a slopeMaxAngle slope, only apply small a mount of forward direction
+    else if (actualSlopeAngle >= slopeMaxAngle) {
       movingDirection.set(
         0,
         Math.sin(slopeAngle) > 0 ? 0 : Math.sin(slopeAngle),
@@ -753,6 +757,11 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
     if (getCameraBased().isCameraBased) {
       modelEuler.y = pivot.rotation.y
       pivot.getWorldDirection(modelFacingVec)
+      // Update slopeRayOrigin to new positon
+      const slopeRayOriginNewPosition = new THREE.Vector3(movingDirection.x, 0, movingDirection.z)
+      const crossVecOnY = slopeRayOriginNewPosition.clone().cross(modelFacingVec)
+      slopeRayOriginRef.current.position.x = slopeRayOriginOffest * Math.sin(slopeRayOriginNewPosition.angleTo(modelFacingVec) * (crossVecOnY.y < 0 ? 1 : -1))
+      slopeRayOriginRef.current.position.z = slopeRayOriginOffest * Math.cos(slopeRayOriginNewPosition.angleTo(modelFacingVec) * (crossVecOnY.y < 0 ? 1 : -1))
     } else {
       characterModelIndicator.getWorldDirection(modelFacingVec)
     }
@@ -969,9 +978,10 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
   useFrame((state, delta) => {
     if (delta > 1) delta %= 1;
 
-    // Character current position
+    // Character current position/velocity
     if (characterRef.current) {
       currentPos.copy(characterRef.current.translation() as THREE.Vector3);
+      currentVel.copy(characterRef.current.linvel() as THREE.Vector3);
       // Assign userDate properties
       (characterRef.current.userData as userDataType).canJump = canJump;
       (characterRef.current.userData as userDataType).slopeAngle = slopeAngle;
@@ -1030,10 +1040,6 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
     // Move character to the moving direction
     if (forward || backward || leftward || rightward || gamepadKeys.forward || gamepadKeys.backward || gamepadKeys.leftward || gamepadKeys.rightward)
       moveCharacter(delta, run, slopeAngle, movingObjectVelocity);
-
-    // Character current velocity
-    if (characterRef.current)
-      currentVel.copy(characterRef.current.linvel() as THREE.Vector3);
 
     // Jump impulse
     if ((jump || button1Pressed) && canJump) {
