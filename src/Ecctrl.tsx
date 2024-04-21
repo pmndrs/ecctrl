@@ -120,13 +120,13 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
 }: EcctrlProps, ref) => {
   const characterRef = ref as RefObject<RapierRigidBody> || useRef<RapierRigidBody>()
   const characterModelRef = useRef<THREE.Group>();
-  const characterModelIndicator = useMemo(() => new THREE.Object3D(), [])
+  const characterModelIndicator: THREE.Object3D = useMemo(() => new THREE.Object3D(), [])
   const defaultControllerKeys = { forward: 12, backward: 13, leftward: 14, rightward: 15, jump: 2, action1: 11, action2: 3, action3: 1, action4: 0 }
 
   /**
    * Mode setup
    */
-  let isModePointToMove = false
+  let isModePointToMove: boolean = false
   const setCameraBased = useGame((state) => state.setCameraBased);
   const getCameraBased = useGame((state) => state.getCameraBased);
   if (mode) {
@@ -137,15 +137,20 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
   /** 
    * Body collider setup
    */
-  const modelFacingVec = useMemo(() => new THREE.Vector3(), []);
-  const bodyFacingVec = useMemo(() => new THREE.Vector3(), []);
-  const bodyBalanceVec = useMemo(() => new THREE.Vector3(), []);
-  const bodyBalanceVecOnX = useMemo(() => new THREE.Vector3(), []);
-  const bodyFacingVecOnY = useMemo(() => new THREE.Vector3(), []);
-  const bodyBalanceVecOnZ = useMemo(() => new THREE.Vector3(), []);
-  const vectorY = useMemo(() => new THREE.Vector3(0, 1, 0), []);
-  const vectorZ = useMemo(() => new THREE.Vector3(0, 0, 1), []);
-  const bodyContactForce = useMemo(() => new THREE.Vector3(), []);
+  const modelFacingVec: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const bodyFacingVec: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const bodyBalanceVec: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const bodyBalanceVecOnX: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const bodyFacingVecOnY: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const bodyBalanceVecOnZ: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const vectorY: THREE.Vector3 = useMemo(() => new THREE.Vector3(0, 1, 0), []);
+  const vectorZ: THREE.Vector3 = useMemo(() => new THREE.Vector3(0, 0, 1), []);
+  const crossVecOnX: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const crossVecOnY: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const crossVecOnZ: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const bodyContactForce: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const slopeRayOriginUpdatePosition: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const camBasedMoveCrossVecOnY: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
 
   // Animation change functions
   const idleAnimation = !animated ? null : useGame((state) => state.idle);
@@ -454,7 +459,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
    */
   let controllerIndex: number = null
   const gamepadKeys = { forward: false, backward: false, leftward: false, rightward: false };
-  const gamepadJoystickVec2 = useMemo(() => new THREE.Vector2(), [])
+  const gamepadJoystickVec2: THREE.Vector2 = useMemo(() => new THREE.Vector2(), [])
   let gamepadJoystickDis: number = 0
   let gamepadJoystickAng: number = 0
   const gamepadConnect = (e: any) => { controllerIndex = e.gamepad.index }
@@ -500,20 +505,20 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
   }
 
   // can jump setup
-  let canJump = false;
-  let isFalling = false;
+  let canJump: boolean = false;
+  let isFalling: boolean = false;
   const initialGravityScale: number = useMemo(() => props.gravityScale || 1, [])
 
   // on moving object state
-  let massRatio = 1;
-  let isOnMovingObject = false;
-  const standingForcePoint = useMemo(() => new THREE.Vector3(), []);
-  const movingObjectDragForce = useMemo(() => new THREE.Vector3(), []);
-  const movingObjectVelocity = useMemo(() => new THREE.Vector3(), []);
-  const movingObjectVelocityInCharacterDir = useMemo(() => new THREE.Vector3(), []);
-  const distanceFromCharacterToObject = useMemo(() => new THREE.Vector3(), []);
-  const objectAngvelToLinvel = useMemo(() => new THREE.Vector3(), []);
-  const velocityDiff = useMemo(() => new THREE.Vector3(), []);
+  let massRatio: number = 1;
+  let isOnMovingObject: boolean = false;
+  const standingForcePoint: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const movingObjectDragForce: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const movingObjectVelocity: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const movingObjectVelocityInCharacterDir: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const distanceFromCharacterToObject: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const objectAngvelToLinvel: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const velocityDiff: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
 
   /**
    * Initial light setup
@@ -541,28 +546,28 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
    */
   const { pivot, cameraCollisionDetect, joystickCamMove } =
     useFollowCam(cameraSetups);
-  const pivotPosition = useMemo(() => new THREE.Vector3(), []);
-  const modelEuler = useMemo(() => new THREE.Euler(), []);
-  const modelQuat = useMemo(() => new THREE.Quaternion(), []);
-  const moveImpulse = useMemo(() => new THREE.Vector3(), []);
-  const movingDirection = useMemo(() => new THREE.Vector3(), []);
-  const moveAccNeeded = useMemo(() => new THREE.Vector3(), []);
-  const jumpVelocityVec = useMemo(() => new THREE.Vector3(), []);
-  const jumpDirection = useMemo(() => new THREE.Vector3(), []);
-  const currentVel = useMemo(() => new THREE.Vector3(), []);
-  const currentPos = useMemo(() => new THREE.Vector3(), []);
-  const dragForce = useMemo(() => new THREE.Vector3(), []);
-  const dragAngForce = useMemo(() => new THREE.Vector3(), []);
-  const wantToMoveVel = useMemo(() => new THREE.Vector3(), []);
-  const rejectVel = useMemo(() => new THREE.Vector3(), []);
+  const pivotPosition: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const modelEuler: THREE.Euler = useMemo(() => new THREE.Euler(), []);
+  const modelQuat: THREE.Quaternion = useMemo(() => new THREE.Quaternion(), []);
+  const moveImpulse: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const movingDirection: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const moveAccNeeded: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const jumpVelocityVec: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const jumpDirection: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const currentVel: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const currentPos: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const dragForce: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const dragAngForce: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const wantToMoveVel: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const rejectVel: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
 
   /**
    * Floating Ray setup
    */
   let floatingForce = null;
-  const springDirVec = useMemo(() => new THREE.Vector3(), []);
-  const characterMassForce = useMemo(() => new THREE.Vector3(), []);
-  const rayOrigin = useMemo(() => new THREE.Vector3(), []);
+  const springDirVec: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const characterMassForce: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const rayOrigin: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
   const rayCast = new rapier.Ray(rayOrigin, rayDir);
   let rayHit: RayColliderToi = null;
 
@@ -575,10 +580,10 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
   let slopeAngle: number = null;
   let actualSlopeNormal: Vector = null;
   let actualSlopeAngle: number = null;
-  const actualSlopeNormalVec = useMemo(() => new THREE.Vector3(), []);
-  const floorNormal = useMemo(() => new THREE.Vector3(0, 1, 0), []);
+  const actualSlopeNormalVec: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const floorNormal: THREE.Vector3 = useMemo(() => new THREE.Vector3(0, 1, 0), []);
   const slopeRayOriginRef = useRef<THREE.Mesh>();
-  const slopeRayorigin = useMemo(() => new THREE.Vector3(), []);
+  const slopeRayorigin: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
   const slopeRayCast = new rapier.Ray(slopeRayorigin, slopeRayDir);
   let slopeRayHit: RayColliderToi = null;
 
@@ -587,8 +592,8 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
    */
   let isBodyHitWall = false;
   let isPointMoving = false;
-  const crossVector = useMemo(() => new THREE.Vector3(), []);
-  const pointToPoint = useMemo(() => new THREE.Vector3(), []);
+  const crossVector: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
+  const pointToPoint: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
   const getMoveToPoint = useGame((state) => state.getMoveToPoint);
   const bodySensorRef = useRef<Collider>();
   const handleOnIntersectionEnter = () => {
@@ -601,7 +606,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
   /**
    * Character moving function
    */
-  let characterRotated = true;
+  let characterRotated: boolean = true;
   const moveCharacter = (
     _: number,
     run: boolean,
@@ -758,16 +763,16 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
       modelEuler.y = pivot.rotation.y
       pivot.getWorldDirection(modelFacingVec)
       // Update slopeRayOrigin to new positon
-      const slopeRayOriginNewPosition = new THREE.Vector3(movingDirection.x, 0, movingDirection.z)
-      const crossVecOnY = slopeRayOriginNewPosition.clone().cross(modelFacingVec)
-      slopeRayOriginRef.current.position.x = slopeRayOriginOffest * Math.sin(slopeRayOriginNewPosition.angleTo(modelFacingVec) * (crossVecOnY.y < 0 ? 1 : -1))
-      slopeRayOriginRef.current.position.z = slopeRayOriginOffest * Math.cos(slopeRayOriginNewPosition.angleTo(modelFacingVec) * (crossVecOnY.y < 0 ? 1 : -1))
+      slopeRayOriginUpdatePosition.set(movingDirection.x, 0, movingDirection.z)
+      camBasedMoveCrossVecOnY.copy(slopeRayOriginUpdatePosition).cross(modelFacingVec)
+      slopeRayOriginRef.current.position.x = slopeRayOriginOffest * Math.sin(slopeRayOriginUpdatePosition.angleTo(modelFacingVec) * (camBasedMoveCrossVecOnY.y < 0 ? 1 : -1))
+      slopeRayOriginRef.current.position.z = slopeRayOriginOffest * Math.cos(slopeRayOriginUpdatePosition.angleTo(modelFacingVec) * (camBasedMoveCrossVecOnY.y < 0 ? 1 : -1))
     } else {
       characterModelIndicator.getWorldDirection(modelFacingVec)
     }
-    const crossVecOnX = vectorY.clone().cross(bodyBalanceVecOnX);
-    const crossVecOnY = modelFacingVec.clone().cross(bodyFacingVecOnY);
-    const crossVecOnZ = vectorY.clone().cross(bodyBalanceVecOnZ);
+    crossVecOnX.copy(vectorY).cross(bodyBalanceVecOnX);
+    crossVecOnY.copy(modelFacingVec).cross(bodyFacingVecOnY);
+    crossVecOnZ.copy(vectorY).cross(bodyBalanceVecOnZ);
 
     dragAngForce.set(
       (crossVecOnX.x < 0 ? 1 : -1) *
