@@ -13,6 +13,36 @@
 
 ## New Features
 
+### (2024-04-23) Custom AnimationSet actions:
+
+- Introduces support for defining custom actions in the animations set and invoking them using the setCustomAnimation function.
+
+#### Usage Example:
+
+```js
+import { useGame } from "ecctrl";
+
+const animationSet = {
+  idle: "Idle",
+  walk: "Walk",
+  run: "Run",
+  .....
+  // Custom action
+  custom: {
+    fly: "Fly"
+  }
+};
+
+// ...
+const setCustomAnimation = useGame((state) => state.setCustomAnimation);
+// ...
+setCustomAnimation("fly");
+```
+
+#### Note:
+
+Ensure to update your `animationSet` accordingly to include any custom animations you wish to use in your game.
+
 ### (2024-1-1) EcctrlMode:
 
 - Now you can seamlessly switch between different modes by adding "mode" inside Ecctrl.
@@ -170,8 +200,8 @@ EcctrlProps: {
   autoBalance: true, // Enable auto-balance
   autoBalanceSpringK: 0.3, // Auto-balance spring constant
   autoBalanceDampingC: 0.03, // Auto-balance damping coefficient
-  autoBalanceSpringOnY: 0.5, // Auto-balance spring on Y-axis 
-  autoBalanceDampingOnY: 0.015, // Auto-balance damping on Y-axis 
+  autoBalanceSpringOnY: 0.5, // Auto-balance spring on Y-axis
+  autoBalanceDampingOnY: 0.015, // Auto-balance damping on Y-axis
   // Animation temporary setups
   animated: false, // Enable animation
   // Mode setups
@@ -425,7 +455,7 @@ pressButton1();
 
 ### Ecctrl Mode
 
-Activate different modes in Ecctrl by including the desired mode inside Ecctrl component: 
+Activate different modes in Ecctrl by including the desired mode inside Ecctrl component:
 `<Ecctrl mode="PointToMove">`.
 
 #### 1. "PointToMove" Mode ([CodeSandbox Demo](https://codesandbox.io/p/sandbox/ecctrl-pointtomove-m9z6xh?file=%2Fsrc%2FMap.js%3A46%2C19))

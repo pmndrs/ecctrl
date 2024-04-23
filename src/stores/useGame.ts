@@ -47,6 +47,14 @@ export const useGame = /* @__PURE__ */ create(
             state.curAnimation !== state.animationSet.action3 &&
             state.curAnimation !== state.animationSet.action4
           ) {
+            if (
+              state.animationSet?.custom &&
+              Object.values(state.animationSet?.custom).includes(
+                state.curAnimation
+              )
+            ) {
+              return {};
+            }
             return { curAnimation: state.animationSet.idle };
           }
           return {};
@@ -144,11 +152,17 @@ export const useGame = /* @__PURE__ */ create(
       /**
        * Additional animations
        */
-      // triggerFunction: ()=>{
-      //    set((state) => {
-      //        return { curAnimation: state.animationSet.additionalAnimation };
-      //    });
-      // }
+      setCustomAnimation: (animation: string) => {
+        set((state) => {
+          if (
+            state.animationSet.custom[animation] &&
+            state.curAnimation === state.animationSet.idle
+          ) {
+            return { curAnimation: state.animationSet.custom[animation] };
+          }
+          return { curAnimation: state.animationSet.idle };
+        });
+      },
 
       /**
        * Set/get point to move point
@@ -196,6 +210,8 @@ export type AnimationSet = {
   action2?: string;
   action3?: string;
   action4?: string;
+  // Custom actions
+  custom?: Record<string, string>;
 };
 
 type State = {
@@ -208,11 +224,12 @@ type State = {
   setMoveToPoint: (point: THREE.Vector3) => void;
   getMoveToPoint: () => {
     moveToPoint: THREE.Vector3;
-  }
+  };
   setCameraBased: (isCameraBased: boolean) => void;
   getCameraBased: () => {
     isCameraBased: boolean;
-  }
+  };
+  setCustomAnimation: (animation: string) => void;
 } & {
-  [key in keyof AnimationSet]: () => void;
+  [key in keyof Omit<AnimationSet, "custom">]: () => void;
 };
