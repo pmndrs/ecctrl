@@ -110,7 +110,7 @@ export default function Experience() {
 
         {/* Shoting cubes */}
         <ShotCube />
-      </Physics >
+      </Physics>
     </>
   );
 }

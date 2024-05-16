@@ -51,8 +51,11 @@ export const useFollowCam = function (props: UseFollowCamProps) {
   // Mouse move event
   const onDocumentMouseMove = (e: MouseEvent) => {
     if (document.pointerLockElement || isMouseDown) {
-      pivot.rotation.y -= e.movementX * 0.002 * camMoveSpeed;
-      const vy = followCam.rotation.x + e.movementY * 0.002 * camMoveSpeed;
+      pivot.rotation.y +=
+        (props.camReverseOrbit ? 1 : -1) * e.movementX * 0.002 * camMoveSpeed;
+      const vy =
+        followCam.rotation.x +
+        (props.camReverseOrbit ? -1 : 1) * e.movementY * 0.002 * camMoveSpeed;
 
       cameraDistance = followCam.position.length();
 
@@ -83,9 +86,9 @@ export const useFollowCam = function (props: UseFollowCamProps) {
    */
   // Touch end event
   const onTouchEnd = (e: TouchEvent) => {
-    previousTouch1 = null
-    previousTouch2 = null
-  }
+    previousTouch1 = null;
+    previousTouch2 = null;
+  };
 
   // Touch move event
   const onTouchMove = (e: TouchEvent) => {
@@ -136,7 +139,7 @@ export const useFollowCam = function (props: UseFollowCamProps) {
 
     previousTouch1 = touch1;
     previousTouch2 = touch2;
-  }
+  };
 
   /**
    * Gamepad second joystick event
@@ -152,7 +155,7 @@ export const useFollowCam = function (props: UseFollowCamProps) {
       followCam.position.y = -cameraDistance * Math.sin(-vy);
       followCam.position.z = -cameraDistance * Math.cos(vy);
     }
-  }
+  };
 
   /**
    * Custom traverse function
@@ -223,16 +226,26 @@ export const useFollowCam = function (props: UseFollowCamProps) {
   // Initialize camera facing direction
   useEffect(() => {
     pivot.rotation.y = camInitDir.y;
-    followCam.rotation.x = camInitDir.x
-  }, [])
+    followCam.rotation.x = camInitDir.x;
+  }, []);
 
   // Set camera position to (0,0,0), if followCam is disabled set to disableFollowCamPos (default 0,0,-5)
   useEffect(() => {
     if (disableFollowCam) {
-      camera.position.set(disableFollowCamPos.x, disableFollowCamPos.y, disableFollowCamPos.z)
-      camera.lookAt(new THREE.Vector3(disableFollowCamTarget.x, disableFollowCamTarget.y, disableFollowCamTarget.z))
+      camera.position.set(
+        disableFollowCamPos.x,
+        disableFollowCamPos.y,
+        disableFollowCamPos.z
+      );
+      camera.lookAt(
+        new THREE.Vector3(
+          disableFollowCamTarget.x,
+          disableFollowCamTarget.y,
+          disableFollowCamTarget.z
+        )
+      );
     } else {
-      camera.position.set(0, 0, 0)
+      camera.position.set(0, 0, 0);
     }
   }, [disableFollowCam]);
 
@@ -244,17 +257,27 @@ export const useFollowCam = function (props: UseFollowCamProps) {
     disableFollowCam ? followCam.remove(camera) : followCam.add(camera);
     pivot.add(followCam);
 
-    gl.domElement.addEventListener("mousedown", () => { isMouseDown = true });
-    gl.domElement.addEventListener("mouseup", () => { isMouseDown = false });
+    gl.domElement.addEventListener("mousedown", () => {
+      isMouseDown = true;
+    });
+    gl.domElement.addEventListener("mouseup", () => {
+      isMouseDown = false;
+    });
     gl.domElement.addEventListener("mousemove", onDocumentMouseMove);
     gl.domElement.addEventListener("mousewheel", onDocumentMouseWheel);
     // Touch event
     gl.domElement.addEventListener("touchend", onTouchEnd);
-    gl.domElement.addEventListener("touchmove", onTouchMove, { passive: false });
+    gl.domElement.addEventListener("touchmove", onTouchMove, {
+      passive: false,
+    });
 
     return () => {
-      gl.domElement.removeEventListener("mousedown", () => { isMouseDown = true });
-      gl.domElement.removeEventListener("mouseup", () => { isMouseDown = false });
+      gl.domElement.removeEventListener("mousedown", () => {
+        isMouseDown = true;
+      });
+      gl.domElement.removeEventListener("mouseup", () => {
+        isMouseDown = false;
+      });
       gl.domElement.removeEventListener("mousemove", onDocumentMouseMove);
       gl.domElement.removeEventListener("mousewheel", onDocumentMouseWheel);
       // Touch event
@@ -270,13 +293,14 @@ export const useFollowCam = function (props: UseFollowCamProps) {
 
 export type UseFollowCamProps = {
   disableFollowCam?: boolean;
-  disableFollowCamPos?: { x: number, y: number, z: number };
-  disableFollowCamTarget?: { x: number, y: number, z: number };
+  disableFollowCamPos?: { x: number; y: number; z: number };
+  disableFollowCamTarget?: { x: number; y: number; z: number };
   camInitDis?: number;
   camMaxDis?: number;
   camMinDis?: number;
-  camInitDir?: { x: number, y: number};
+  camInitDir?: { x: number; y: number };
   camMoveSpeed?: number;
   camZoomSpeed?: number;
   camCollisionOffset?: number;
+  camReverseOrbit?: boolean;
 };
