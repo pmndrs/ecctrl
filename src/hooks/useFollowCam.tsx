@@ -243,6 +243,7 @@ export const useFollowCam = function (props: UseFollowCamProps) {
     // Prepare for followCam and pivot point
     disableFollowCam ? followCam.remove(camera) : followCam.add(camera);
     pivot.add(followCam);
+    scene.add(pivot);
 
     gl.domElement.addEventListener("mousedown", () => { isMouseDown = true });
     gl.domElement.addEventListener("mouseup", () => { isMouseDown = false });
