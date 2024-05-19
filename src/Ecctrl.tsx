@@ -92,6 +92,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
   rayHitForgiveness = 0.1,
   rayLength = capsuleRadius + 2,
   rayDir = { x: 0, y: -1, z: 0 },
+  disableExternalRayForces = false,
   floatingDis = capsuleRadius + floatHeight,
   springK = 1.2,
   dampingC = 0.08,
@@ -1062,11 +1063,15 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
           .add(jumpVelocityVec),
         true
       );
-      // Apply jump force downward to the standing platform
+
       characterMassForce.y *= jumpForceToGroundMult;
-      rayHit.collider
-        .parent()
-        ?.applyImpulseAtPoint(characterMassForce, standingForcePoint, true);
+
+      // Apply jump force downward to the standing platform
+      if (!disableExternalRayForces) {
+        rayHit.collider
+          .parent()
+          ?.applyImpulseAtPoint(characterMassForce, standingForcePoint, true);
+      }
     }
 
     // Rotate character Indicator
@@ -1278,18 +1283,19 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
     /**
      * Apply floating force
      */
-    if (rayHit != null) {
-      if (canJump && rayHit.collider.parent()) {
-        floatingForce =
-          springK * (floatingDis - rayHit.toi) -
-          characterRef.current.linvel().y * dampingC;
-        characterRef.current.applyImpulse(
-          springDirVec.set(0, floatingForce, 0),
-          false
-        );
+    if (rayHit != null && canJump && rayHit.collider.parent()) {
+      floatingForce =
+        springK * (floatingDis - rayHit.toi) -
+        characterRef.current.linvel().y * dampingC;
+      characterRef.current.applyImpulse(
+        springDirVec.set(0, floatingForce, 0),
+        false
+      );
 
-        // Apply opposite force to standing object (gravity g in rapier is 0.11 ?_?)
-        characterMassForce.set(0, floatingForce > 0 ? -floatingForce : 0, 0);
+      characterMassForce.set(0, floatingForce > 0 ? -floatingForce : 0, 0);
+
+      // Apply opposite force to standing object (gravity g in rapier is 0.11 ?_?)
+      if (!disableExternalRayForces) {
         rayHit.collider
           .parent()
           ?.applyImpulseAtPoint(characterMassForce, standingForcePoint, true);
@@ -1491,6 +1497,7 @@ export interface EcctrlProps extends RigidBodyProps {
   rayHitForgiveness?: number;
   rayLength?: number;
   rayDir?: { x: number; y: number; z: number };
+  disableExternalRayForces?: boolean;
   floatingDis?: number;
   springK?: number;
   dampingC?: number;
