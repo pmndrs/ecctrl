@@ -17,7 +17,7 @@ import { useGame } from "./stores/useGame";
 import { useJoystickControls } from "./stores/useJoystickControls";
 import type {
   Collider,
-  RayColliderToi,
+  RayColliderHit,
   Vector,
 } from "@dimforge/rapier3d-compat";
 import React from "react";
@@ -569,7 +569,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
   const characterMassForce: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
   const rayOrigin: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
   const rayCast = new rapier.Ray(rayOrigin, rayDir);
-  let rayHit: RayColliderToi = null;
+  let rayHit: RayColliderHit | null = null;
 
   /**Test shape ray */
   // const shape = new rapier.Capsule(0.2,0.1)
@@ -585,7 +585,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
   const slopeRayOriginRef = useRef<THREE.Mesh>();
   const slopeRayorigin: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
   const slopeRayCast = new rapier.Ray(slopeRayorigin, slopeRayDir);
-  let slopeRayHit: RayColliderToi = null;
+  let slopeRayHit: RayColliderHit | null = null;
 
   /**
    * Point to move setup
@@ -1127,7 +1127,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
     //   characterRef.current
     // );
 
-    if (rayHit && rayHit.toi < floatingDis + rayHitForgiveness) {
+    if (rayHit && rayHit.timeOfImpact < floatingDis + rayHitForgiveness) {
       if (slopeRayHit && actualSlopeAngle < slopeMaxAngle) {
         canJump = true;
       }
@@ -1143,7 +1143,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
         // Getting the standing force apply point
         standingForcePoint.set(
           rayOrigin.x,
-          rayOrigin.y - rayHit.toi,
+          rayOrigin.y - rayHit.timeOfImpact,
           rayOrigin.z
         );
         const rayHitObjectBodyType = rayHit.collider.parent().bodyType();
@@ -1260,12 +1260,12 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
         actualSlopeAngle = actualSlopeNormalVec?.angleTo(floorNormal);
       }
     }
-    if (slopeRayHit && rayHit && slopeRayHit.toi < floatingDis + 0.5) {
+    if (slopeRayHit && rayHit && slopeRayHit.timeOfImpact < floatingDis + 0.5) {
       if (canJump) {
         // Round the slope angle to 2 decimal places
         slopeAngle = Number(
           Math.atan(
-            (rayHit.toi - slopeRayHit.toi) / slopeRayOriginOffest
+            (rayHit.timeOfImpact - slopeRayHit.timeOfImpact) / slopeRayOriginOffest
           ).toFixed(2)
         );
       } else {
@@ -1281,7 +1281,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
     if (rayHit != null) {
       if (canJump && rayHit.collider.parent()) {
         floatingForce =
-          springK * (floatingDis - rayHit.toi) -
+          springK * (floatingDis - rayHit.timeOfImpact) -
           characterRef.current.linvel().y * dampingC;
         characterRef.current.applyImpulse(
           springDirVec.set(0, floatingForce, 0),
