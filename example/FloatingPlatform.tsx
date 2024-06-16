@@ -1,6 +1,5 @@
 import {
   CuboidCollider,
-  RapierRigidBody,
   RigidBody,
   useRapier,
 } from "@react-three/rapier";
@@ -8,7 +7,7 @@ import { useEffect, useRef, useMemo } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
-import type { RayColliderToi } from "@dimforge/rapier3d-compat";
+import type { RayColliderHit } from "@dimforge/rapier3d-compat";
 
 export default function FloatingPlatform() {
   // Preset
@@ -27,7 +26,7 @@ export default function FloatingPlatform() {
   const springDirVec = useMemo(() => new THREE.Vector3(), []);
   const origin = useMemo(() => new THREE.Vector3(), []);
   const rayCast = new rapier.Ray(origin, rayDir);
-  let rayHit: RayColliderToi = null;
+  let rayHit: RayColliderHit | null = null;
   const floatingDis = 0.8;
   const springK = 2.5;
   const dampingC = 0.15;
@@ -35,14 +34,14 @@ export default function FloatingPlatform() {
   const springDirVec2 = useMemo(() => new THREE.Vector3(), []);
   const origin2 = useMemo(() => new THREE.Vector3(), []);
   const rayCast2 = new rapier.Ray(origin2, rayDir);
-  let rayHit2: RayColliderToi = null;
+  let rayHit2: RayColliderHit | null = null;
   // Moving Platform
   const springDirVecMove = useMemo(() => new THREE.Vector3(), []);
   const originMove = useMemo(() => new THREE.Vector3(), []);
   const rayCastMove = new rapier.Ray(originMove, rayDir);
   const movingVel = useMemo(() => new THREE.Vector3(), []);
   let movingDir = 1;
-  let rayHitMove: RayColliderToi = null;
+  let rayHitMove: RayColliderHit | null = null;
 
   useEffect(() => {
     // Loack platform 1 rotation
@@ -74,8 +73,8 @@ export default function FloatingPlatform() {
         rayCast,
         rayLength,
         false,
-        null,
-        null,
+        undefined,
+        undefined,
         floatingPlateRef.current,
         floatingPlateRef.current
       );
@@ -91,8 +90,8 @@ export default function FloatingPlatform() {
         rayCast2,
         rayLength,
         false,
-        null,
-        null,
+        undefined,
+        undefined,
         floatingPlateRef2.current,
         floatingPlateRef2.current
       );
@@ -108,8 +107,8 @@ export default function FloatingPlatform() {
         rayCastMove,
         rayLength,
         false,
-        null,
-        null,
+        undefined,
+        undefined,
         floatingMovingPlateRef.current,
         floatingMovingPlateRef.current
       );
@@ -138,7 +137,7 @@ export default function FloatingPlatform() {
     if (rayHit) {
       if (rayHit.collider.parent()) {
         const floatingForce =
-          springK * (floatingDis - rayHit.toi) -
+          springK * (floatingDis - rayHit.timeOfImpact) -
           floatingPlateRef.current.linvel().y * dampingC;
         floatingPlateRef.current.applyImpulse(
           springDirVec.set(0, floatingForce, 0),
@@ -151,7 +150,7 @@ export default function FloatingPlatform() {
     if (rayHit2) {
       if (rayHit2.collider.parent()) {
         const floatingForce2 =
-          springK * (floatingDis - rayHit2.toi) -
+          springK * (floatingDis - rayHit2.timeOfImpact) -
           floatingPlateRef2.current.linvel().y * dampingC;
         floatingPlateRef2.current.applyImpulse(
           springDirVec2.set(0, floatingForce2, 0),
@@ -164,7 +163,7 @@ export default function FloatingPlatform() {
     if (rayHitMove) {
       if (rayHitMove.collider.parent()) {
         const floatingForceMove =
-          springK * (floatingDis - rayHitMove.toi) -
+          springK * (floatingDis - rayHitMove.timeOfImpact) -
           floatingMovingPlateRef.current.linvel().y * dampingC;
         floatingMovingPlateRef.current.applyImpulse(
           springDirVecMove.set(0, floatingForceMove, 0),
