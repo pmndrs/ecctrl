@@ -456,6 +456,32 @@ If you would like to quickly set up a first-person mode, you can modify these pr
 >
 ```
 
+### Popular problems and their solutions
+
+#### 1. Scene doesn't load and I get EcctrlAnimation component error
+
+Check if you filled essential animations, which are:
+
+```js
+const animationSet = {
+  idle: "yourAnimationName",
+  walk: "yourAnimationName",
+  run: "yourAnimationName",
+  jump: "yourAnimationName",
+  jumpIdle: "yourAnimationName",
+  jumpLand: "yourAnimationName",
+  fall: "yourAnimationName",
+}
+```
+
+#### 2. Animations play only once
+
+If you fill different properties of animationSet with the same name of animations, those will play only once. Try using different animations.
+
+#### 3. Character falls through the terrain
+
+Try to use different collider for the terrain mesh.
+
 ## Contributions
 
 I appreciate your interest in this project! If you have any feedback, suggestions, or resources related to the controller, please feel free to share.
