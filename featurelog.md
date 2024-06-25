@@ -1,5 +1,13 @@
 ## New Features
 
+### (2024-6-24) FixedCamera Mode:
+
+- The “FixedCamera” mode automatically rotates the camera as the character turns (similar to the controls in Coastal World). You can activate it with the following code:
+
+`<Ecctrl mode="FixedCamera">`
+
+[![screenshot](example/EcctrlFixedCamera.png)]
+
 ### (2024-1-1) EcctrlMode:
 
 - Now you can seamlessly switch between different modes by adding "mode" inside Ecctrl.

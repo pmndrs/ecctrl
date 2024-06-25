@@ -13,26 +13,13 @@
 
 ## New Features
 
-### (2024-1-1) EcctrlMode:
+### (2024-6-24) FixedCamera Mode:
 
-- Now you can seamlessly switch between different modes by adding "mode" inside Ecctrl.
+- The “FixedCamera” mode automatically rotates the camera as the character turns (similar to the controls in Coastal World). You can activate it with the following code:
 
-`<Ecctrl mode="PointToMove">`
+`<Ecctrl mode="FixedCamera">`
 
-- "PointToMove" mode is designed for click-to-move or path following features. (no needs for keyboard controls)
-
-```js
-import { useGame } from "ecctrl";
-// ...
-const setMoveToPoint = useGame((state) => state.setMoveToPoint);
-// ...
-// call function setMoveToPoint(), whenever character needs to move
-setMoveToPoint(point); // "point" is a vec3 value
-```
-
-- Here is a simple click-to-move example: [Ecctrl CodeSandbox](https://codesandbox.io/p/sandbox/ecctrl-pointtomove-m9z6xh)
-
-[![screenshot](example/ecctrlClickToMove.png)](https://codesandbox.io/p/sandbox/ecctrl-pointtomove-m9z6xh)
+![screenshot](example/EcctrlFixedCamera.png)
 
 Check out the [featurelog.md](/featurelog.md) for details on previous updates and features.
 
@@ -130,6 +117,7 @@ EcctrlProps: {
   camZoomSpeed: 1, // Camera zooming speed multiplier
   camCollision: true, // Camera collision active/deactive
   camCollisionOffset: 0.7, // Camera collision offset
+  fixedCamRotMult: 1, // Camera rotate speed multiplier (FixedCamera mode)
    // Follow light setups
   followLightPos: { x: 20, y: 30, z: 10 }, // Follow light position
   // Base control setups

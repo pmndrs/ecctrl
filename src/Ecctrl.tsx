@@ -67,6 +67,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
   camZoomSpeed = 1,
   camCollision = true,
   camCollisionOffset = 0.7,
+  fixedCamRotMult = 1,
   // Follow light setups
   followLightPos = { x: 20, y: 30, z: 10 },
   // Base control setups
@@ -127,10 +128,12 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
    * Mode setup
    */
   let isModePointToMove: boolean = false
+  let isModeFixedCamera: boolean = false
   const setCameraBased = useGame((state) => state.setCameraBased);
   const getCameraBased = useGame((state) => state.getCameraBased);
   if (mode) {
     if (mode === "PointToMove") isModePointToMove = true
+    if (mode === "FixedCamera") isModeFixedCamera = true
     if (mode === "CameraBasedMovement") setCameraBased(true)
   }
 
@@ -486,6 +489,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
       releaseAllButtons()
     }
   }
+
   const handleSticks = (axes: readonly number[]) => {
     // Gamepad first joystick trigger the EcctrlJoystick event to move the character
     if (Math.abs(axes[0]) > 0 || Math.abs(axes[1]) > 0) {
@@ -499,7 +503,6 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
     }
     // Gamepad second joystick trigger the useFollowCam event to move the camera
     if (Math.abs(axes[2]) > 0 || Math.abs(axes[3]) > 0) {
-      // console.log(axes[2], axes[3]);
       joystickCamMove(axes[2], axes[3])
     }
   }
@@ -536,8 +539,8 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
     camMaxDis,
     camMinDis,
     camInitDir,
-    camMoveSpeed,
-    camZoomSpeed,
+    camMoveSpeed: isModeFixedCamera ? 0 : camMoveSpeed, // Disable camera move in fixed camera mode
+    camZoomSpeed: isModeFixedCamera ? 0 : camMoveSpeed, // Disable camera zoom in fixed camera mode
     camCollisionOffset
   };
 
@@ -1114,6 +1117,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
         collider.parent().userData && !(collider.parent().userData as userDataType).excludeEcctrlRay
       ))
     );
+
     /**Test shape ray */
     // rayHit = world.castShape(
     //   currentPos,
@@ -1367,6 +1371,17 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
     isModePointToMove && pointToMove(delta, slopeAngle, movingObjectVelocity)
 
     /**
+     * Fixed camera feature
+     */
+    if (isModeFixedCamera) {
+      if (leftward) {
+        pivot.rotation.y += (run ? delta * sprintMult * fixedCamRotMult : delta * fixedCamRotMult)
+      } else if (rightward) {
+        pivot.rotation.y -= (run ? delta * sprintMult * fixedCamRotMult : delta * fixedCamRotMult)
+      }
+    }
+
+    /**
      * Apply all the animations
      */
     if (animated) {
@@ -1466,6 +1481,7 @@ export interface EcctrlProps extends RigidBodyProps {
   camZoomSpeed?: number;
   camCollision?: boolean;
   camCollisionOffset?: number;
+  fixedCamRotMult?: number;
   // Follow light setups
   followLightPos?: { x: number, y: number, z: number };
   // Base control setups
