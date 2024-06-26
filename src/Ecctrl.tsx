@@ -135,6 +135,10 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
     if (mode === "PointToMove") isModePointToMove = true
     if (mode === "FixedCamera") isModeFixedCamera = true
     if (mode === "CameraBasedMovement") setCameraBased(true)
+  } else {
+      isModePointToMove = false;
+      isModeFixedCamera = false;
+      setCameraBased(false);
   }
 
   /** 
