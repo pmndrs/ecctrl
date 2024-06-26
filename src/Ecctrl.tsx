@@ -135,9 +135,13 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
     if (mode === "PointToMove") isModePointToMove = true
     if (mode === "FixedCamera") isModeFixedCamera = true
     if (mode === "CameraBasedMovement") setCameraBased(true)
+  } else {
+      isModePointToMove = false;
+      isModeFixedCamera = false;
+      setCameraBased(false);
   }
 
-  /** 
+  /**
    * Body collider setup
    */
   const modelFacingVec: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
@@ -620,7 +624,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
      * Setup moving direction
      */
     // Only apply slope angle to moving direction
-    // when slope angle is between 0.2rad and slopeMaxAngle, 
+    // when slope angle is between 0.2rad and slopeMaxAngle,
     // and actualSlopeAngle < slopeMaxAngle
     if (
       actualSlopeAngle < slopeMaxAngle &&
@@ -819,7 +823,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
       // Rotate character to moving direction
       modelEuler.y = (crossVector.y > 0 ? -1 : 1) * pointToPoint.angleTo(vectorZ);
       // Once character close to the target point (distance<0.3),
-      // Or character close to the wall (bodySensor intersects) 
+      // Or character close to the wall (bodySensor intersects)
       // stop moving
       if (characterRef.current) {
         if (pointToPoint.length() > 0.3 && !isBodyHitWall) {
@@ -1107,7 +1111,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
       rayCast,
       rayLength,
       true,
-      // this exclude sensor 
+      // this exclude sensor
       16,
       null,
       null,
@@ -1237,7 +1241,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
       slopeRayCast,
       slopeRayLength,
       true,
-      // this exclude sensor 
+      // this exclude sensor
       16,
       null,
       null,
