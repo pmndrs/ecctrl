@@ -1532,7 +1532,7 @@ export interface EcctrlProps extends RigidBodyProps {
   // Animation temporary setups
   animated?: boolean;
   // Mode setups
-  mode?: string;
+  mode?: "CameraBasedMovement" | "FixedCamera" | "PointToMove" | null;
   // Controller setups
   controllerKeys?: { forward?: number, backward?: number, leftward?: number, rightward?: number, jump?: number, action1?: number, action2?: number, action3?: number, action4?: number }
   // Other rigibody props from parent
