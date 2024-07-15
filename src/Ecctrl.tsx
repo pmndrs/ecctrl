@@ -128,13 +128,16 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
    * Mode setup
    */
   let isModePointToMove: boolean = false
+  let functionKeyDown: boolean = false
   let isModeFixedCamera: boolean = false
+  const setMoveToPoint = useGame((state) => state.setMoveToPoint)
   const setCameraBased = useGame((state) => state.setCameraBased);
   const getCameraBased = useGame((state) => state.getCameraBased);
+  const findMode = (mode: string, modes: string) => modes.split(" ").some(m => m === mode)
   if (mode) {
-    if (mode === "PointToMove") isModePointToMove = true
-    if (mode === "FixedCamera") isModeFixedCamera = true
-    if (mode === "CameraBasedMovement") setCameraBased(true)
+    if (findMode("PointToMove", mode)) isModePointToMove = true
+    if (findMode("FixedCamera", mode)) isModeFixedCamera = true
+    if (findMode("CameraBasedMovement", mode)) setCameraBased(true)
   }
 
   /** 
@@ -540,7 +543,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
     camMinDis,
     camInitDir,
     camMoveSpeed: isModeFixedCamera ? 0 : camMoveSpeed, // Disable camera move in fixed camera mode
-    camZoomSpeed: isModeFixedCamera ? 0 : camMoveSpeed, // Disable camera zoom in fixed camera mode
+    camZoomSpeed: isModeFixedCamera ? 0 : camZoomSpeed, // Disable camera zoom in fixed camera mode
     camCollisionOffset
   };
 
@@ -811,21 +814,24 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
   /**
    * Point-to-move function
    */
-  const pointToMove = (delta: number, slopeAngle: number, movingObjectVelocity: THREE.Vector3) => {
+  const pointToMove = (delta: number, slopeAngle: number, movingObjectVelocity: THREE.Vector3, functionKeyDown: boolean) => {
     const moveToPoint = getMoveToPoint().moveToPoint;
     if (moveToPoint) {
       pointToPoint.set(moveToPoint.x - currentPos.x, 0, moveToPoint.z - currentPos.z)
       crossVector.crossVectors(pointToPoint, vectorZ)
       // Rotate character to moving direction
       modelEuler.y = (crossVector.y > 0 ? -1 : 1) * pointToPoint.angleTo(vectorZ);
+      // If mode is also set to fixed camera. keep the camera on the back of character
+      if (isModeFixedCamera) pivot.rotation.y = THREE.MathUtils.lerp(pivot.rotation.y, modelEuler.y, fixedCamRotMult * delta * 3);
       // Once character close to the target point (distance<0.3),
       // Or character close to the wall (bodySensor intersects) 
       // stop moving
       if (characterRef.current) {
-        if (pointToPoint.length() > 0.3 && !isBodyHitWall) {
+        if (pointToPoint.length() > 0.3 && !isBodyHitWall && !functionKeyDown) {
           moveCharacter(delta, false, slopeAngle, movingObjectVelocity)
           isPointMoving = true
         } else {
+          setMoveToPoint(null);
           isPointMoving = false
         }
       }
@@ -1368,7 +1374,10 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
     /**
      * Point to move feature
      */
-    isModePointToMove && pointToMove(delta, slopeAngle, movingObjectVelocity)
+    if (isModePointToMove) {
+      functionKeyDown = (forward || backward || leftward || rightward || joystickDis > 0 || gamepadKeys.forward || gamepadKeys.backward || gamepadKeys.leftward || gamepadKeys.rightward || jump || button1Pressed)
+      pointToMove(delta, slopeAngle, movingObjectVelocity, functionKeyDown)
+    }
 
     /**
      * Fixed camera feature
