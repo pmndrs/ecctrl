@@ -113,7 +113,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
   // Animation temporary setups
   animated = false,
   // Mode setups
-  mode = null,
+  modes = null,
   // Controller setups
   controllerKeys = { forward: 12, backward: 13, leftward: 14, rightward: 15, jump: 2, action1: 11, action2: 3, action3: 1, action4: 0 },
   // Other rigibody props from parent
@@ -133,11 +133,11 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
   const setMoveToPoint = useGame((state) => state.setMoveToPoint)
   const setCameraBased = useGame((state) => state.setCameraBased);
   const getCameraBased = useGame((state) => state.getCameraBased);
-  const findMode = (mode: string, modes: string) => modes.split(" ").some(m => m === mode)
-  if (mode) {
-    if (findMode("PointToMove", mode)) isModePointToMove = true
-    if (findMode("FixedCamera", mode)) isModeFixedCamera = true
-    if (findMode("CameraBasedMovement", mode)) setCameraBased(true)
+  const findMode = (mode: Mode, modes: Mode[]) => modes.some(m => m === mode)
+  if (modes) {
+    if (findMode("PointToMove", modes)) isModePointToMove = true
+    if (findMode("FixedCamera", modes)) isModeFixedCamera = true
+    if (findMode("CameraBasedMovement", modes)) setCameraBased(true)
   }
 
   /** 
@@ -1469,6 +1469,8 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
 
 export default forwardRef(Ecctrl);
 
+type Mode = "CameraBasedMovement" | "FixedCamera" | "PointToMove";
+
 export interface EcctrlProps extends RigidBodyProps {
   children?: ReactNode;
   debug?: boolean;
@@ -1541,7 +1543,7 @@ export interface EcctrlProps extends RigidBodyProps {
   // Animation temporary setups
   animated?: boolean;
   // Mode setups
-  mode?: "CameraBasedMovement" | "FixedCamera" | "PointToMove" | null;
+  modes?: Mode[];
   // Controller setups
   controllerKeys?: { forward?: number, backward?: number, leftward?: number, rightward?: number, jump?: number, action1?: number, action2?: number, action3?: number, action4?: number }
   // Other rigibody props from parent
