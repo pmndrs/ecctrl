@@ -1469,7 +1469,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
 
 export default forwardRef(Ecctrl);
 
-type Mode = "CameraBasedMovement" | "FixedCamera" | "PointToMove";
+export type Mode = "CameraBasedMovement" | "FixedCamera" | "PointToMove";
 
 export interface EcctrlProps extends RigidBodyProps {
   children?: ReactNode;
