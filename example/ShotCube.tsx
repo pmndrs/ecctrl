@@ -8,15 +8,13 @@ export default function ShotCube() {
   const [cubeMesh, setCubeMesh] = useState([]);
   const cubeRef = useRef<RapierRigidBody>();
 
-  const position = useMemo(() => new THREE.Vector3(), []);
   const direction = useMemo(() => new THREE.Vector3(), []);
 
   const clickToCreateBox = () => {
     if (document.pointerLockElement) {
-      camera.parent?.getWorldPosition(position);
       const newMesh = (
         <mesh
-          position={[position.x, position.y - 0.5, position.z]}
+          position={[camera.position.x, camera.position.y - 0.5, camera.position.z]}
           castShadow
           receiveShadow
         >
@@ -29,13 +27,13 @@ export default function ShotCube() {
   };
 
   useEffect(() => {
-    camera.parent?.getWorldDirection(direction);
+    camera.getWorldDirection(direction);
     if (cubeMesh.length > 0) {
       cubeRef.current?.setLinvel(
         new THREE.Vector3(
           direction.x * 20,
-          direction.y * 20 + 2,
-          direction.z * 20
+          direction.y * 20,
+          direction.z * 20 + 2
         ),
         false
       );
