@@ -61,6 +61,8 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
   camInitDis = -5,
   camMaxDis = -7,
   camMinDis = -0.7,
+  camUpLimit = 1.5, // in rad
+  camLowLimit = -1.3, // in rad
   camInitDir = { x: 0, y: 0 }, // in rad
   camTargetPos = { x: 0, y: 0, z: 0 },
   camMoveSpeed = 1,
@@ -68,6 +70,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
   camCollision = true,
   camCollisionOffset = 0.7,
   fixedCamRotMult = 1,
+  camListenerTarget = "domElement", // document or domElement
   // Follow light setups
   followLightPos = { x: 20, y: 30, z: 10 },
   // Base control setups
@@ -542,10 +545,13 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
     camInitDis,
     camMaxDis,
     camMinDis,
+    camUpLimit,
+    camLowLimit,
     camInitDir,
     camMoveSpeed: isModeFixedCamera ? 0 : camMoveSpeed, // Disable camera move in fixed camera mode
     camZoomSpeed: isModeFixedCamera ? 0 : camZoomSpeed, // Disable camera zoom in fixed camera mode
-    camCollisionOffset
+    camCollisionOffset,
+    camListenerTarget,
   };
 
   /**
@@ -1476,6 +1482,8 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
 
 export default forwardRef(Ecctrl);
 
+export type camListenerTargetType = "document" | "domElement";
+
 export interface EcctrlProps extends RigidBodyProps {
   children?: ReactNode;
   debug?: boolean;
@@ -1491,6 +1499,8 @@ export interface EcctrlProps extends RigidBodyProps {
   camInitDis?: number;
   camMaxDis?: number;
   camMinDis?: number;
+  camUpLimit?: number;
+  camLowLimit?: number;
   camInitDir?: { x: number, y: number };
   camTargetPos?: { x: number, y: number, z: number };
   camMoveSpeed?: number;
@@ -1498,6 +1508,7 @@ export interface EcctrlProps extends RigidBodyProps {
   camCollision?: boolean;
   camCollisionOffset?: number;
   fixedCamRotMult?: number;
+  camListenerTarget?: camListenerTargetType;
   // Follow light setups
   followLightPos?: { x: number, y: number, z: number };
   // Base control setups

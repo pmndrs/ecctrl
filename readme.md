@@ -111,6 +111,8 @@ EcctrlProps: {
   camInitDis: -5, // Initial camera distance
   camMaxDis: -7, // Maximum camera distance
   camMinDis: -0.7, // Minimum camera distance
+  camUpLimit: 1.5, // Camera upward limit (in rad)
+  camLowLimit: -1.3, // Camera loward limit (in rad)
   camInitDir: { x: 0, y: 0 }, // Camera initial rotation direction (in rad)
   camTargetPos: { x: 0, y: 0, z: 0 }, // Camera target position
   camMoveSpeed: 1, // Camera moving speed multiplier
@@ -118,7 +120,8 @@ EcctrlProps: {
   camCollision: true, // Camera collision active/deactive
   camCollisionOffset: 0.7, // Camera collision offset
   fixedCamRotMult: 1, // Camera rotate speed multiplier (FixedCamera mode)
-   // Follow light setups
+  camListenerTarget: "domElement", // Camera listener target ("domElement" | "document")
+  // Follow light setups
   followLightPos: { x: 20, y: 30, z: 10 }, // Follow light position
   // Base control setups
   maxVelLimit: 2.5, // Maximum velocity limit

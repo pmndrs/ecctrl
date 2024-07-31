@@ -2,6 +2,7 @@ import { useThree } from "@react-three/fiber";
 // import { useRapier } from "@react-three/rapier";
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
+import type { camListenerTargetType } from "../Ecctrl";
 
 export const useFollowCam = function (props: UseFollowCamProps) {
   const { scene, camera, gl } = useThree();
@@ -17,10 +18,13 @@ export const useFollowCam = function (props: UseFollowCamProps) {
   let originZDis = props.camInitDis;
   const camMaxDis = props.camMaxDis;
   const camMinDis = props.camMinDis;
+  const camUpLimit = props.camUpLimit;
+  const camLowLimit = props.camLowLimit
   const camInitDir = props.camInitDir;
   const camMoveSpeed = props.camMoveSpeed;
   const camZoomSpeed = props.camZoomSpeed;
   const camCollisionOffset = props.camCollisionOffset;
+  const camListenerTarget = props.camListenerTarget
   const pivot = useMemo(() => new THREE.Object3D(), []);
   const followCam = useMemo(() => {
     const origin = new THREE.Object3D();
@@ -56,7 +60,7 @@ export const useFollowCam = function (props: UseFollowCamProps) {
 
       cameraDistance = followCam.position.length();
 
-      if (vy >= -1.3 && vy <= 1.5) {
+      if (vy >= camLowLimit && vy <= camUpLimit) {
         followCam.rotation.x = vy;
         followCam.position.y = -cameraDistance * Math.sin(-vy);
         followCam.position.z = -cameraDistance * Math.cos(-vy);
@@ -106,7 +110,7 @@ export const useFollowCam = function (props: UseFollowCamProps) {
 
       cameraDistance = followCam.position.length();
 
-      if (vy >= -1.3 && vy <= 1.5) {
+      if (vy >= camLowLimit && vy <= camUpLimit) {
         followCam.rotation.x = vy;
         followCam.position.y = -cameraDistance * Math.sin(-vy);
         followCam.position.z = -cameraDistance * Math.cos(-vy);
@@ -147,7 +151,7 @@ export const useFollowCam = function (props: UseFollowCamProps) {
 
     cameraDistance = followCam.position.length();
 
-    if (vy >= -1.3 && vy <= 1.5) {
+    if (vy >= camLowLimit && vy <= camUpLimit) {
       followCam.rotation.x = vy;
       followCam.position.y = -cameraDistance * Math.sin(-vy);
       followCam.position.z = -cameraDistance * Math.cos(vy);
@@ -245,24 +249,44 @@ export const useFollowCam = function (props: UseFollowCamProps) {
     pivot.add(followCam);
     scene.add(pivot);
 
-    gl.domElement.addEventListener("mousedown", () => { isMouseDown = true });
-    gl.domElement.addEventListener("mouseup", () => { isMouseDown = false });
-    gl.domElement.addEventListener("mousemove", onDocumentMouseMove);
-    gl.domElement.addEventListener("mousewheel", onDocumentMouseWheel);
-    // Touch event
-    gl.domElement.addEventListener("touchend", onTouchEnd);
-    gl.domElement.addEventListener("touchmove", onTouchMove, { passive: false });
+    if (camListenerTarget === "domElement") {
+      gl.domElement.addEventListener("mousedown", () => { isMouseDown = true });
+      gl.domElement.addEventListener("mouseup", () => { isMouseDown = false });
+      gl.domElement.addEventListener("mousemove", onDocumentMouseMove);
+      gl.domElement.addEventListener("mousewheel", onDocumentMouseWheel);
+      // Touch event
+      gl.domElement.addEventListener("touchend", onTouchEnd);
+      gl.domElement.addEventListener("touchmove", onTouchMove, { passive: false });
+    } else if (camListenerTarget === "document") {
+      document.addEventListener("mousedown", () => { isMouseDown = true });
+      document.addEventListener("mouseup", () => { isMouseDown = false });
+      document.addEventListener("mousemove", onDocumentMouseMove);
+      document.addEventListener("mousewheel", onDocumentMouseWheel);
+      // Touch event
+      document.addEventListener("touchend", onTouchEnd);
+      document.addEventListener("touchmove", onTouchMove, { passive: false });
+    }
 
     return () => {
-      gl.domElement.removeEventListener("mousedown", () => { isMouseDown = true });
-      gl.domElement.removeEventListener("mouseup", () => { isMouseDown = false });
-      gl.domElement.removeEventListener("mousemove", onDocumentMouseMove);
-      gl.domElement.removeEventListener("mousewheel", onDocumentMouseWheel);
-      // Touch event
-      gl.domElement.removeEventListener("touchend", onTouchEnd);
-      gl.domElement.removeEventListener("touchmove", onTouchMove);
+      if (camListenerTarget === "domElement") {
+        gl.domElement.removeEventListener("mousedown", () => { isMouseDown = true });
+        gl.domElement.removeEventListener("mouseup", () => { isMouseDown = false });
+        gl.domElement.removeEventListener("mousemove", onDocumentMouseMove);
+        gl.domElement.removeEventListener("mousewheel", onDocumentMouseWheel);
+        // Touch event
+        gl.domElement.removeEventListener("touchend", onTouchEnd);
+        gl.domElement.removeEventListener("touchmove", onTouchMove);
+      } else if (camListenerTarget === "document") {
+        document.removeEventListener("mousedown", () => { isMouseDown = true });
+        document.removeEventListener("mouseup", () => { isMouseDown = false });
+        document.removeEventListener("mousemove", onDocumentMouseMove);
+        document.removeEventListener("mousewheel", onDocumentMouseWheel);
+        // Touch event
+        document.removeEventListener("touchend", onTouchEnd);
+        document.removeEventListener("touchmove", onTouchMove);
+      }
       // Remove camera from followCam
-      followCam.remove(camera);
+      // followCam.remove(camera);
     };
   });
 
@@ -276,8 +300,11 @@ export type UseFollowCamProps = {
   camInitDis?: number;
   camMaxDis?: number;
   camMinDis?: number;
+  camUpLimit?: number;
+  camLowLimit?: number;
   camInitDir?: { x: number, y: number };
   camMoveSpeed?: number;
   camZoomSpeed?: number;
   camCollisionOffset?: number;
+  camListenerTarget?: camListenerTargetType;
 };

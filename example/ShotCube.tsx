@@ -32,8 +32,8 @@ export default function ShotCube() {
       cubeRef.current?.setLinvel(
         new THREE.Vector3(
           direction.x * 20,
-          direction.y * 20,
-          direction.z * 20 + 2
+          direction.y * 20 + 2,
+          direction.z * 20
         ),
         false
       );
