@@ -28,7 +28,11 @@ export const useFollowCam = function (props: UseFollowCamProps) {
   const pivot = useMemo(() => new THREE.Object3D(), []);
   const followCam = useMemo(() => {
     const origin = new THREE.Object3D();
-    origin.position.set(0, 0, originZDis);
+    origin.position.set(
+      0,
+      originZDis * Math.sin(-camInitDir.x),
+      originZDis * Math.cos(-camInitDir.x)
+    );
     return origin;
   }, []);
 
