@@ -264,8 +264,7 @@ export default function CharacterModel(props: CharacterModelProps) {
             <Trail
               width={1.5}
               color={trailColor}
-              length={3}
-              decay={2}
+              length={1.5}
               attenuation={(width) => width}
             >
               <primitive object={nodes.Body} />
