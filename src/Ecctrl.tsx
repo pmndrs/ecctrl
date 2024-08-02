@@ -9,7 +9,7 @@ import {
   type RigidBodyProps,
   CylinderCollider,
 } from "@react-three/rapier";
-import { useEffect, useRef, useMemo, type ReactNode, forwardRef, type ForwardRefRenderFunction, type RefObject } from "react";
+import { useEffect, useRef, useMemo, useState, type ReactNode, forwardRef, type ForwardRefRenderFunction, type RefObject } from "react";
 import * as THREE from "three";
 import { useControls } from "leva";
 import { useFollowCam } from "./hooks/useFollowCam";
@@ -467,13 +467,13 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
   /**
    * Gamepad controls setup
    */
-  let controllerIndex: number = null
+  const [controllerIndex, setControllerIndex] = useState<number | null>(null)
   const gamepadKeys = { forward: false, backward: false, leftward: false, rightward: false };
   const gamepadJoystickVec2: THREE.Vector2 = useMemo(() => new THREE.Vector2(), [])
   let gamepadJoystickDis: number = 0
   let gamepadJoystickAng: number = 0
-  const gamepadConnect = (e: any) => { controllerIndex = e.gamepad.index }
-  const gamepadDisconnect = () => { controllerIndex = null }
+  const gamepadConnect = (e: any) => { setControllerIndex(e.gamepad.index) }
+  const gamepadDisconnect = () => { setControllerIndex(null) }
   const mergedKeys = useMemo(() => Object.assign({}, defaultControllerKeys, controllerKeys), [controllerKeys])
   const handleButtons = (buttons: readonly GamepadButton[]) => {
     gamepadKeys.forward = buttons[mergedKeys.forward].pressed
@@ -506,6 +506,8 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
       const runState = gamepadJoystickDis > 0.7
       setJoystick(gamepadJoystickDis, gamepadJoystickAng, runState)
     } else {
+      gamepadJoystickDis = 0
+      gamepadJoystickAng = 0
       resetJoystick()
     }
     // Gamepad second joystick trigger the useFollowCam event to move the camera
@@ -1396,9 +1398,19 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
      * Fixed camera feature
      */
     if (isModeFixedCamera) {
-      if (leftward) {
+      if (
+        leftward ||
+        gamepadKeys.leftward ||
+        (joystickDis > 0 && joystickAng > 2 * Math.PI / 3 && joystickAng < 4 * Math.PI / 3) ||
+        (gamepadJoystickDis > 0 && gamepadJoystickAng > 2 * Math.PI / 3 && gamepadJoystickAng < 4 * Math.PI / 3)
+      ) {
         pivot.rotation.y += (run ? delta * sprintMult * fixedCamRotMult : delta * fixedCamRotMult)
-      } else if (rightward) {
+      } else if (
+        rightward ||
+        gamepadKeys.rightward ||
+        (joystickDis > 0 && joystickAng < Math.PI / 3 || joystickAng > 5 * Math.PI / 3) ||
+        (gamepadJoystickDis > 0 && gamepadJoystickAng < Math.PI / 3 || gamepadJoystickAng > 5 * Math.PI / 3)
+      ) {
         pivot.rotation.y -= (run ? delta * sprintMult * fixedCamRotMult : delta * fixedCamRotMult)
       }
     }

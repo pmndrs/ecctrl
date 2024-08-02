@@ -150,8 +150,8 @@ export const useFollowCam = function (props: UseFollowCamProps) {
    * Gamepad second joystick event
    */
   const joystickCamMove = (movementX: number, movementY: number) => {
-    pivot.rotation.y -= movementX * 0.005 * camMoveSpeed * 3;
-    const vy = followCam.rotation.x + movementY * 0.005 * camMoveSpeed * 3;
+    pivot.rotation.y -= movementX * 0.005 * camMoveSpeed * 5;
+    const vy = followCam.rotation.x + movementY * 0.005 * camMoveSpeed * 5;
 
     cameraDistance = followCam.position.length();
 
