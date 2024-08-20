@@ -54,9 +54,10 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
   floatHeight = 0.3,
   characterInitDir = 0, // in rad
   followLight = false,
+  disableControl = false,
   disableFollowCam = false,
-  disableFollowCamPos = { x: 0, y: 0, z: -5 },
-  disableFollowCamTarget = { x: 0, y: 0, z: 0 },
+  disableFollowCamPos = null,
+  disableFollowCamTarget = null,
   // Follow camera setups
   camInitDis = -5,
   camMaxDis = -7,
@@ -134,14 +135,13 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
   let isModePointToMove: boolean = false
   let functionKeyDown: boolean = false
   let isModeFixedCamera: boolean = false
+  let isModeCameraBased: boolean = false
   const setMoveToPoint = useGame((state) => state.setMoveToPoint)
-  const setCameraBased = useGame((state) => state.setCameraBased);
-  const getCameraBased = useGame((state) => state.getCameraBased);
   const findMode = (mode: string, modes: string) => modes.split(" ").some(m => m === mode)
   if (mode) {
     if (findMode("PointToMove", mode)) isModePointToMove = true
     if (findMode("FixedCamera", mode)) isModeFixedCamera = true
-    if (findMode("CameraBasedMovement", mode)) setCameraBased(true)
+    if (findMode("CameraBasedMovement", mode)) isModeCameraBased = true
   }
 
   /** 
@@ -775,7 +775,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
     bodyBalanceVecOnZ.set(bodyBalanceVec.x, bodyBalanceVec.y, 0)
 
     // Check if is camera based movement
-    if (getCameraBased().isCameraBased) {
+    if (isModeCameraBased) {
       modelEuler.y = pivot.rotation.y
       pivot.getWorldDirection(modelFacingVec)
       // Update slopeRayOrigin to new positon
@@ -1024,6 +1024,32 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
     }
 
     /**
+     * Camera movement
+     */
+    pivotPosition.set(
+      currentPos.x + camTargetPos.x,
+      currentPos.y + (camTargetPos.y || (capsuleHalfHeight + capsuleRadius / 2)),
+      currentPos.z + camTargetPos.z
+    );
+    pivot.position.lerp(pivotPosition, 1 - Math.exp(-camFollowMult * delta));
+
+    if (!disableFollowCam) {
+      followCam.getWorldPosition(followCamPosition);
+      state.camera.position.lerp(followCamPosition, 1 - Math.exp(-camLerpMult * delta));
+      state.camera.lookAt(pivot.position);
+    }
+
+    /**
+     * Camera collision detect
+     */
+    camCollision && cameraCollisionDetect(delta);
+
+    /**
+     * If disableControl is true, skip all following features 
+     */
+    if (disableControl) return;
+
+    /**
      * Getting all gamepad control values
      */
     if (controllerIndex !== null) {
@@ -1097,27 +1123,11 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
 
     // If autobalance is off, rotate character model itself
     if (!autoBalance) {
-      if (getCameraBased().isCameraBased) {
+      if (isModeCameraBased) {
         characterModelRef.current.quaternion.copy(pivot.quaternion)
       } else {
         characterModelRef.current.quaternion.copy(characterModelIndicator.quaternion)
       }
-    }
-
-    /**
-     *  Camera movement
-     */
-    pivotPosition.set(
-      currentPos.x + camTargetPos.x,
-      currentPos.y + (camTargetPos.y || (capsuleHalfHeight + capsuleRadius / 2)),
-      currentPos.z + camTargetPos.z
-    );
-    pivot.position.lerp(pivotPosition, 1 - Math.exp(-camFollowMult * delta));
-
-    if (!disableFollowCam) {
-      followCam.getWorldPosition(followCamPosition);
-      state.camera.position.lerp(followCamPosition, 1 - Math.exp(-camLerpMult * delta));
-      state.camera.lookAt(pivot.position);
     }
 
     /**
@@ -1382,11 +1392,6 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
     if (autoBalance && characterRef.current) autoBalanceCharacter();
 
     /**
-     * Camera collision detect
-     */
-    camCollision && cameraCollisionDetect(delta);
-
-    /**
      * Point to move feature
      */
     if (isModePointToMove) {
@@ -1504,6 +1509,7 @@ export interface EcctrlProps extends RigidBodyProps {
   floatHeight?: number;
   characterInitDir?: number;
   followLight?: boolean;
+  disableControl?: boolean;
   disableFollowCam?: boolean;
   disableFollowCamPos?: { x: number, y: number, z: number };
   disableFollowCamTarget?: { x: number, y: number, z: number };

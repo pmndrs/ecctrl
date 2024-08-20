@@ -234,13 +234,11 @@ export const useFollowCam = function (props: UseFollowCamProps) {
     followCam.rotation.x = camInitDir.x
   }, [])
 
-  // Set camera position to (0,0,0), if followCam is disabled set to disableFollowCamPos (default 0,0,-5)
+  // If followCam is disabled set to disableFollowCamPos, target to disableFollowCamTarget
   useEffect(() => {
     if (disableFollowCam) {
-      camera.position.set(disableFollowCamPos.x, disableFollowCamPos.y, disableFollowCamPos.z)
-      camera.lookAt(new THREE.Vector3(disableFollowCamTarget.x, disableFollowCamTarget.y, disableFollowCamTarget.z))
-    } else {
-      camera.position.set(0, 0, 0)
+      if (disableFollowCamPos) camera.position.set(disableFollowCamPos.x, disableFollowCamPos.y, disableFollowCamPos.z)
+      if (disableFollowCamTarget) camera.lookAt(new THREE.Vector3(disableFollowCamTarget.x, disableFollowCamTarget.y, disableFollowCamTarget.z))
     }
   }, [disableFollowCam]);
 

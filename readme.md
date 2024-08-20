@@ -104,6 +104,7 @@ EcctrlProps: {
   floatHeight: 0.3, // Height of the character when floating
   characterInitDir: 0, // Character initial facing direction (in rad)
   followLight: false, // Enable follow light mode (name your light "followLight" before turn this on)
+  disableControl: false, // Disable the ecctrl control feature
   disableFollowCam: false, // Disable follow camera feature
   disableFollowCamPos: { x: 0, y: 0, z: -5 }, // Camera position when the follow camera feature is disabled
   disableFollowCamTarget: { x: 0, y: 0, z: 0 }, // Camera lookAt target when the follow camera feature is disabled
