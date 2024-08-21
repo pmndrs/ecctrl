@@ -19,7 +19,7 @@ const JoystickComponents = (props: EcctrlJoystickProps) => {
     const joystickMovementVec2 = useMemo(() => new THREE.Vector2(), [])
 
     const [windowSize, setWindowSize] = useState({ innerHeight, innerWidth })
-    const joystickDiv: HTMLDivElement = document.querySelector("#ecctrl-joystick")
+    const joystickDiv: HTMLDivElement | null = document.querySelector("#ecctrl-joystick")
 
     /**
      * Animation preset
@@ -103,6 +103,8 @@ const JoystickComponents = (props: EcctrlJoystickProps) => {
     }
 
     useEffect(() => {
+        if(!joystickDiv) return
+        
         const joystickPositionX = joystickDiv.getBoundingClientRect().x
         const joystickPositionY = joystickDiv.getBoundingClientRect().y
         joystickHalfWidth = joystickDiv.getBoundingClientRect().width / 2
@@ -116,12 +118,12 @@ const JoystickComponents = (props: EcctrlJoystickProps) => {
         joystickDiv.addEventListener("touchmove", onTouchMove, { passive: false })
         joystickDiv.addEventListener("touchend", onTouchEnd)
 
-        window.visualViewport.addEventListener("resize", onWindowResize)
+        window.visualViewport?.addEventListener("resize", onWindowResize)
 
         return () => {
             joystickDiv.removeEventListener("touchmove", onTouchMove)
             joystickDiv.removeEventListener("touchend", onTouchEnd)
-            window.visualViewport.removeEventListener("resize", onWindowResize)
+            window.visualViewport?.removeEventListener("resize", onWindowResize)
         }
     })
 
@@ -160,7 +162,7 @@ const ButtonComponents = ({ buttonNumber = 1, ...props }: EcctrlJoystickProps) =
     const buttonTop4Material = useMemo(() => new THREE.MeshNormalMaterial({ transparent: true, opacity: 0.5 }), [])
     const buttonTop5Material = useMemo(() => new THREE.MeshNormalMaterial({ transparent: true, opacity: 0.5 }), [])
 
-    const buttonDiv: HTMLDivElement = document.querySelector("#ecctrl-button")
+    const buttonDiv: HTMLDivElement | null = document.querySelector("#ecctrl-button")
 
     /**
     * Animation preset
@@ -254,6 +256,8 @@ const ButtonComponents = ({ buttonNumber = 1, ...props }: EcctrlJoystickProps) =
     }
 
     useEffect(() => {
+        if(!buttonDiv) return
+        
         buttonDiv.addEventListener("pointerup", onPointerUp)
 
         return () => {
