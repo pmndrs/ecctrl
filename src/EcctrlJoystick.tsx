@@ -19,7 +19,7 @@ const JoystickComponents = (props: EcctrlJoystickProps) => {
     const joystickMovementVec2 = useMemo(() => new THREE.Vector2(), [])
 
     const [windowSize, setWindowSize] = useState({ innerHeight, innerWidth })
-    const joystickDiv: HTMLDivElement = document.querySelector("#ecctrl-joystick")
+    const joystickDiv: HTMLDivElement | null = document.querySelector("#ecctrl-joystick")
 
     /**
      * Animation preset
