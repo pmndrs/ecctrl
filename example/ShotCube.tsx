@@ -41,10 +41,10 @@ export default function ShotCube() {
   }, [cubeMesh]);
 
   useEffect(() => {
-    window.addEventListener("click", () => clickToCreateBox());
+    window.addEventListener("click", clickToCreateBox);
 
     return () => {
-      window.removeEventListener("click", () => clickToCreateBox());
+      window.removeEventListener("click", clickToCreateBox);
     };
   }, []);
 
