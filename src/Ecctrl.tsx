@@ -519,7 +519,7 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
   // can jump setup
   let canJump: boolean = false;
   let isFalling: boolean = false;
-  const initialGravityScale: number = useMemo(() => props.gravityScale || 1, [])
+  const initialGravityScale: number = useMemo(() => props.gravityScale ?? 1, [])
 
   // on moving object state
   let massRatio: number = 1;
