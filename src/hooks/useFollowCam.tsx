@@ -24,6 +24,7 @@ export const useFollowCam = function (props: UseFollowCamProps) {
   const camMoveSpeed = props.camMoveSpeed;
   const camZoomSpeed = props.camZoomSpeed;
   const camCollisionOffset = props.camCollisionOffset;
+  const camCollisionSpeedMult = props.camCollisionSpeedMult;
   const camListenerTarget = props.camListenerTarget
   const pivot = useMemo(() => new THREE.Object3D(), []);
   const followCam = useMemo(() => {
@@ -225,7 +226,7 @@ export const useFollowCam = function (props: UseFollowCamProps) {
       smallestDistance * Math.cos(-followCam.rotation.x)
     );
 
-    followCam.position.lerp(camLerpingPoint, delta * 4); // delta * 2 for rapier ray setup
+    followCam.position.lerp(camLerpingPoint, delta * camCollisionSpeedMult); // delta * 2 for rapier ray setup
   };
 
   // Initialize camera facing direction
@@ -308,5 +309,6 @@ export type UseFollowCamProps = {
   camMoveSpeed?: number;
   camZoomSpeed?: number;
   camCollisionOffset?: number;
+  camCollisionSpeedMult?: number;
   camListenerTarget?: camListenerTargetType;
 };

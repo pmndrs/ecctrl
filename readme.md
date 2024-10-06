@@ -120,6 +120,7 @@ EcctrlProps: {
   camZoomSpeed: 1, // Camera zooming speed multiplier
   camCollision: true, // Camera collision active/deactive
   camCollisionOffset: 0.7, // Camera collision offset
+  camCollisionSpeedMult: 4, // Camera collision lerping speed multiplier
   fixedCamRotMult: 1, // Camera rotate speed multiplier (FixedCamera mode)
   camListenerTarget: "domElement", // Camera listener target ("domElement" | "document")
   // Follow light setups
@@ -365,6 +366,7 @@ Here are all the properties you can play with for `<EcctrlJoystick>`:
 EcctrlJoystickProps: {
     // Joystick props
     children?: ReactNode;
+    joystickRunSensitivity?: number; // Sensitivity for transitioning to the running state. The default value is 0.9 (valid range: 0 < joystickRunSensitivity < 1)
     joystickPositionLeft?: number; // joystick div container position left
     joystickPositionBottom?: number; // joystick div container position bottom
     joystickHeightAndWidth?: number; // joystick div container height and width

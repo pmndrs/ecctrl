@@ -69,7 +69,7 @@ const JoystickComponents = (props: EcctrlJoystickProps) => {
         joystickDis = Math.min(Math.sqrt(Math.pow(touch1MovementX, 2) + Math.pow(touch1MovementY, 2)), joystickMaxDis)
         joystickAng = touch1MovementVec2.angle()
         joystickMovementVec2.set(joystickDis * Math.cos(joystickAng), joystickDis * Math.sin(joystickAng))
-        const runState = joystickDis > joystickMaxDis * 0.7
+        const runState = joystickDis > joystickMaxDis * (props.joystickRunSensitivity ?? 0.9)
 
         // Apply animations
         api.start({
@@ -392,6 +392,7 @@ export const EcctrlJoystick = forwardRef<HTMLDivElement, EcctrlJoystickProps>((p
 export type EcctrlJoystickProps = {
     // Joystick props
     children?: ReactNode;
+    joystickRunSensitivity?: number;
     joystickPositionLeft?: number;
     joystickPositionBottom?: number;
     joystickHeightAndWidth?: number;
