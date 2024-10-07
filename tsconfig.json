@@ -13,7 +13,8 @@
     "strictNullChecks": false,
     "jsx": "react",
     "declaration": true,
-    "lib": ["es2022", "dom"]
+    "lib": ["es2022", "dom"],
+    "allowJs": true
   },
   "include": ["src/**/*"]
 }
