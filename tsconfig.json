@@ -11,9 +11,10 @@
     "emitDeclarationOnly": true,
     "moduleResolution": "node",
     "strictNullChecks": false,
-    "jsx": "react",
+    "jsx": "react-jsx",
     "declaration": true,
-    "lib": ["es2022", "dom"]
+    "lib": ["es2022", "dom"],
+    "allowJs": true
   },
   "include": ["src/**/*"]
 }
