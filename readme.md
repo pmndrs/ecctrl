@@ -164,14 +164,17 @@ EcctrlProps: {
   autoBalance: true, // Enable auto-balance
   autoBalanceSpringK: 0.3, // Auto-balance spring constant
   autoBalanceDampingC: 0.03, // Auto-balance damping coefficient
-  autoBalanceSpringOnY: 0.5, // Auto-balance spring on Y-axis 
-  autoBalanceDampingOnY: 0.015, // Auto-balance damping on Y-axis 
+  autoBalanceSpringOnY: 0.5, // Auto-balance spring on Y-axis
+  autoBalanceDampingOnY: 0.015, // Auto-balance damping on Y-axis
   // Animation temporary setups
   animated: false, // Enable animation
   // Mode setups
   mode: null, // Activate different ecctrl modes ("CameraBasedMovement" | "FixedCamera" | "PointToMove")
   // Customizable controller key setups
   controllerKeys: { forward: 12, backward: 13, leftward: 14, rightward: 15, jump: 2, action1: 11, action2: 3, action3: 1, action4: 0 },
+  // Point-to-move setups
+  bodySensorSize: [capsuleHalfHeight / 2, capsuleRadius], // cylinder body sensor [halfHeight, radius]
+  bodySensorPosition: { x: 0, y: 0, z: capsuleRadius / 2 },
   // Other rigibody props from parent
   // Rigidbody props can be used here,
   // such as position, friction, gravityScale, etc.
@@ -420,7 +423,7 @@ pressButton1();
 
 ### Ecctrl Mode
 
-Activate different modes in Ecctrl by including the desired mode inside Ecctrl component: 
+Activate different modes in Ecctrl by including the desired mode inside Ecctrl component:
 `<Ecctrl mode="PointToMove">`.
 
 #### 1. "PointToMove" Mode ([CodeSandbox Demo](https://codesandbox.io/p/sandbox/ecctrl-pointtomove-m9z6xh?file=%2Fsrc%2FMap.js%3A46%2C19))

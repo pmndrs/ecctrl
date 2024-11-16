@@ -123,6 +123,9 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
   mode = null,
   // Controller setups
   controllerKeys = { forward: 12, backward: 13, leftward: 14, rightward: 15, jump: 2, action1: 11, action2: 3, action3: 1, action4: 0 },
+  // Point-to-move setups
+  bodySensorSize = [capsuleHalfHeight / 2, capsuleRadius],
+  bodySensorPosition = { x: 0, y: 0, z: capsuleRadius / 2 },
   // Other rigibody props from parent
   ...props
 }: EcctrlProps, ref) => {
@@ -1478,8 +1481,9 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
         <CylinderCollider
           ref={bodySensorRef}
           sensor
-          args={[capsuleHalfHeight / 2, capsuleRadius]}
-          position={[0, 0, capsuleRadius / 2]}
+          mass={0}
+          args={[bodySensorSize[0], bodySensorSize[1]]}
+          position={[bodySensorPosition.x, bodySensorPosition.y, bodySensorPosition.z]}
           onIntersectionEnter={handleOnIntersectionEnter}
           onIntersectionExit={handleOnIntersectionExit}
         />}
@@ -1589,6 +1593,9 @@ export interface EcctrlProps extends RigidBodyProps {
   mode?: string;
   // Controller setups
   controllerKeys?: { forward?: number, backward?: number, leftward?: number, rightward?: number, jump?: number, action1?: number, action2?: number, action3?: number, action4?: number }
+  // Point-to-move setups
+  bodySensorSize?: Array<number>;
+  bodySensorPosition?: { x: number, y: number, z: number }
   // Other rigibody props from parent
   props?: RigidBodyProps;
 };

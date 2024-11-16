@@ -1,6 +1,6 @@
 {
   "name": "ecctrl",
-  "version": "1.0.90",
+  "version": "1.0.91",
   "author": "Erdong Chen",
   "license": "MIT",
   "description": "A floating rigibody character controller for R3F",
