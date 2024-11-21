@@ -1,6 +1,6 @@
 import { useThree } from "@react-three/fiber";
 // import { useRapier } from "@react-three/rapier";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 import type { camListenerTargetType } from "../Ecctrl";
 
@@ -10,6 +10,7 @@ export const useFollowCam = function (props: UseFollowCamProps) {
   const disableFollowCamPos = props.disableFollowCamPos;
   const disableFollowCamTarget = props.disableFollowCamTarget;
   // const { rapier, world } = useRapier();
+	const [render, setRender] = useState(false);
 
   let isMouseDown = false;
   let previousTouch1: Touch = null;
@@ -292,6 +293,23 @@ export const useFollowCam = function (props: UseFollowCamProps) {
       // followCam.remove(camera);
     };
   });
+
+  useEffect(() => {
+		function onChildAdded() {
+			setRender((prev) => !prev);
+		}
+		function onChildRemoved() {
+			setRender((prev) => !prev);
+		}
+
+		scene.addEventListener("childadded", onChildAdded);
+		scene.addEventListener("childremoved", onChildRemoved);
+
+		return () => {
+			scene.removeEventListener("childadded", onChildAdded);
+			scene.removeEventListener("childremoved", onChildRemoved);
+		};
+	}, [scene]);
 
   return { pivot, followCam, cameraCollisionDetect, joystickCamMove };
 };
