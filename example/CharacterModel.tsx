@@ -29,9 +29,9 @@ export default function CharacterModel(props: CharacterModelProps) {
   /**
    * Prepare hands ref for attack action
    */
-  const rightHandRef = useRef<THREE.Mesh>();
+  const rightHandRef = useRef<THREE.Group>();
   const rightHandColliderRef = useRef<RapierCollider>();
-  const leftHandRef = useRef<THREE.Mesh>();
+  const leftHandRef = useRef<THREE.Group>();
   const leftHandColliderRef = useRef<RapierCollider>();
   const rightHandPos = useMemo(() => new THREE.Vector3(), []);
   const leftHandPos = useMemo(() => new THREE.Vector3(), []);
@@ -220,7 +220,7 @@ export default function CharacterModel(props: CharacterModelProps) {
       {/* Head collider */}
       <BallCollider args={[0.5]} position={[0, 0.45, 0]} />
       {/* Right hand collider */}
-      <mesh ref={rightHandRef} />
+      <group ref={rightHandRef} />
       <BallCollider
         args={[0.1]}
         ref={rightHandColliderRef}
@@ -237,7 +237,7 @@ export default function CharacterModel(props: CharacterModelProps) {
       />
 
       {/* Left hand collider */}
-      <mesh ref={leftHandRef} />
+      <group ref={leftHandRef} />
       <BallCollider args={[0.1]} ref={leftHandColliderRef} />
       {/* Character model */}
       <group

@@ -1,38 +1,41 @@
 import { useThree } from "@react-three/fiber";
 // import { useRapier } from "@react-three/rapier";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { camListenerTargetType } from "../Ecctrl";
 
-export const useFollowCam = function (props: UseFollowCamProps) {
+export const useFollowCam = function ({
+  disableFollowCam = false,
+  disableFollowCamPos = null,
+  disableFollowCamTarget = null,
+  camInitDis = -5,
+  camMaxDis = -7,
+  camMinDis = -0.7,
+  camUpLimit = 1.5, // in rad
+  camLowLimit = -1.3, // in rad
+  camInitDir = { x: 0, y: 0 }, // in rad
+  camMoveSpeed = 1,
+  camZoomSpeed = 1,
+  camCollisionOffset = 0.7, // percentage
+  camCollisionSpeedMult = 4,
+  camListenerTarget = "domElement",
+  ...props
+}: UseFollowCamProps = {}) {
   const { scene, camera, gl } = useThree();
-  const disableFollowCam = props.disableFollowCam;
-  const disableFollowCamPos = props.disableFollowCamPos;
-  const disableFollowCamTarget = props.disableFollowCamTarget;
   // const { rapier, world } = useRapier();
 
   let isMouseDown = false;
   let previousTouch1: Touch = null;
   let previousTouch2: Touch = null;
 
-  let originZDis = props.camInitDis;
-  const camMaxDis = props.camMaxDis;
-  const camMinDis = props.camMinDis;
-  const camUpLimit = props.camUpLimit;
-  const camLowLimit = props.camLowLimit
-  const camInitDir = props.camInitDir;
-  const camMoveSpeed = props.camMoveSpeed;
-  const camZoomSpeed = props.camZoomSpeed;
-  const camCollisionOffset = props.camCollisionOffset;
-  const camCollisionSpeedMult = props.camCollisionSpeedMult;
-  const camListenerTarget = props.camListenerTarget
+  const originZDis = useRef<number>(camInitDis ?? -5)
   const pivot = useMemo(() => new THREE.Object3D(), []);
   const followCam = useMemo(() => {
     const origin = new THREE.Object3D();
     origin.position.set(
       0,
-      originZDis * Math.sin(-camInitDir.x),
-      originZDis * Math.cos(-camInitDir.x)
+      originZDis.current * Math.sin(-camInitDir.x),
+      originZDis.current * Math.cos(-camInitDir.x)
     );
     return origin;
   }, []);
@@ -41,7 +44,8 @@ export const useFollowCam = function (props: UseFollowCamProps) {
   let smallestDistance = null;
   let cameraDistance = null;
   let intersects = null;
-  let intersectObjects: THREE.Object3D[] = [];
+  // let intersectObjects: THREE.Object3D[] = [];
+  const intersectObjects = useRef<THREE.Object3D[]>([])
   const cameraRayDir = useMemo(() => new THREE.Vector3(), []);
   const cameraRayOrigin = useMemo(() => new THREE.Vector3(), []);
   const cameraPosition = useMemo(() => new THREE.Vector3(), []);
@@ -76,13 +80,13 @@ export const useFollowCam = function (props: UseFollowCamProps) {
 
   // Mouse scroll event
   const onDocumentMouseWheel = (e: Event) => {
-    const vz = originZDis - (e as WheelEvent).deltaY * 0.002 * camZoomSpeed;
+    const vz = originZDis.current - (e as WheelEvent).deltaY * 0.002 * camZoomSpeed;
     const vy = followCam.rotation.x;
 
     if (vz >= camMaxDis && vz <= camMinDis) {
-      originZDis = vz;
-      followCam.position.z = originZDis * Math.cos(-vy);
-      followCam.position.y = originZDis * Math.sin(-vy);
+      originZDis.current = vz;
+      followCam.position.z = originZDis.current * Math.cos(-vy);
+      followCam.position.y = originZDis.current * Math.sin(-vy);
     }
     return false;
   };
@@ -133,13 +137,13 @@ export const useFollowCam = function (props: UseFollowCamProps) {
         e.touches[0].pageY - e.touches[1].pageY
       );
 
-      const vz = originZDis - (prePinchDis - pinchDis) * 0.01 * camZoomSpeed;
+      const vz = originZDis.current - (prePinchDis - pinchDis) * 0.01 * camZoomSpeed;
       const vy = followCam.rotation.x;
 
       if (vz >= camMaxDis && vz <= camMinDis) {
-        originZDis = vz;
-        followCam.position.z = originZDis * Math.cos(-vy);
-        followCam.position.y = originZDis * Math.sin(-vy);
+        originZDis.current = vz;
+        followCam.position.z = originZDis.current * Math.cos(-vy);
+        followCam.position.y = originZDis.current * Math.sin(-vy);
       }
     }
 
@@ -167,23 +171,31 @@ export const useFollowCam = function (props: UseFollowCamProps) {
    * Custom traverse function
    */
   // Prepare intersect objects for camera collision
-  function customTraverse(object: THREE.Object3D) {
+  function customTraverseAdd(object: THREE.Object3D) {
     // Chekc if the object's userData camExcludeCollision is true
     if (object.userData && object.userData.camExcludeCollision === true) {
       return;
     }
 
-    // Check if the object is a Mesh, and not Text ("InstancedBufferGeometry")
-    if (
-      (object as THREE.Mesh).isMesh &&
-      (object as THREE.Mesh).geometry.type !== "InstancedBufferGeometry"
-    ) {
-      intersectObjects.push(object);
+    // Check if the object is a Mesh, and is visible
+    if ((object as THREE.Mesh).isMesh && (object as THREE.Mesh).visible) {
+      intersectObjects.current.push(object);
     }
 
     // Recursively traverse child objects
     object.children.forEach((child) => {
-      customTraverse(child); // Continue the traversal for all child objects
+      customTraverseAdd(child); // Continue the traversal for all child objects
+    });
+  }
+  // Remove intersect objects from camera collision array
+  function customTraverseRemove(object: THREE.Object3D) {
+    intersectObjects.current = intersectObjects.current.filter(
+      (item) => item.uuid !== object.uuid // Keep all items except the one to remove
+    );
+
+    // Recursively traverse child objects
+    object.children.forEach((child) => {
+      customTraverseRemove(child); // Continue the traversal for all child objects
     });
   }
 
@@ -201,14 +213,11 @@ export const useFollowCam = function (props: UseFollowCamProps) {
     // casting ray hit, if object in between character and camera,
     // change the smallestDistance to the ray hit toi
     // otherwise the smallestDistance is same as camera original position (originZDis)
-    intersects = camRayCast.intersectObjects(intersectObjects);
-    if (intersects.length && intersects[0].distance <= -originZDis) {
-      smallestDistance =
-        -intersects[0].distance * camCollisionOffset < -0.7
-          ? -intersects[0].distance * camCollisionOffset
-          : -0.7;
+    intersects = camRayCast.intersectObjects(intersectObjects.current);
+    if (intersects.length && intersects[0].distance <= -originZDis.current) {
+      smallestDistance = Math.min(-intersects[0].distance * camCollisionOffset, camMinDis)
     } else {
-      smallestDistance = originZDis;
+      smallestDistance = originZDis.current;
     }
 
     // Rapier ray hit setup (optional)
@@ -226,26 +235,16 @@ export const useFollowCam = function (props: UseFollowCamProps) {
       smallestDistance * Math.cos(-followCam.rotation.x)
     );
 
-    followCam.position.lerp(camLerpingPoint, delta * camCollisionSpeedMult); // delta * 2 for rapier ray setup
+    followCam.position.lerp(camLerpingPoint, 1 - Math.exp(-camCollisionSpeedMult * delta)); // delta * 2 for rapier ray setup
   };
 
-  // Initialize camera facing direction
   useEffect(() => {
+    // Initialize camera facing direction
     pivot.rotation.y = camInitDir.y;
     followCam.rotation.x = camInitDir.x
-  }, [])
 
-  // If followCam is disabled set to disableFollowCamPos, target to disableFollowCamTarget
-  useEffect(() => {
-    if (disableFollowCam) {
-      if (disableFollowCamPos) camera.position.set(disableFollowCamPos.x, disableFollowCamPos.y, disableFollowCamPos.z)
-      if (disableFollowCamTarget) camera.lookAt(new THREE.Vector3(disableFollowCamTarget.x, disableFollowCamTarget.y, disableFollowCamTarget.z))
-    }
-  }, [disableFollowCam]);
-
-  useEffect(() => {
     // Prepare for camera ray intersect objects
-    scene.children.forEach((child) => customTraverse(child));
+    scene.children.forEach((child) => customTraverseAdd(child));
 
     // Prepare for followCam and pivot point
     // disableFollowCam ? followCam.remove(camera) : followCam.add(camera);
@@ -291,7 +290,27 @@ export const useFollowCam = function (props: UseFollowCamProps) {
       // Remove camera from followCam
       // followCam.remove(camera);
     };
-  });
+  }, [])
+
+  // If followCam is disabled set to disableFollowCamPos, target to disableFollowCamTarget
+  useEffect(() => {
+    if (disableFollowCam) {
+      if (disableFollowCamPos) camera.position.set(disableFollowCamPos.x, disableFollowCamPos.y, disableFollowCamPos.z)
+      if (disableFollowCamTarget) camera.lookAt(new THREE.Vector3(disableFollowCamTarget.x, disableFollowCamTarget.y, disableFollowCamTarget.z))
+    }
+  }, [disableFollowCam]);
+
+  // Handle scene add/remove objects events
+  useEffect(() => {
+    const onObjectAdded = (e: any) => customTraverseAdd(e.child)
+    const onObjectRemoved = (e: any) => customTraverseRemove(e.child)
+    scene.addEventListener("childadded", onObjectAdded);
+    scene.addEventListener("childremoved", onObjectRemoved);
+    return () => {
+      scene.removeEventListener("childadded", onObjectAdded);
+      scene.removeEventListener("childremoved", onObjectRemoved);
+    };
+  }, [scene])
 
   return { pivot, followCam, cameraCollisionDetect, joystickCamMove };
 };

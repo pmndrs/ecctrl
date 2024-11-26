@@ -9,7 +9,7 @@ import {
   type RigidBodyProps,
   CylinderCollider,
 } from "@react-three/rapier";
-import { useEffect, useRef, useMemo, useState, type ReactNode, forwardRef, type ForwardRefRenderFunction, type RefObject } from "react";
+import { useEffect, useRef, useMemo, useState, useImperativeHandle, forwardRef, type ReactNode, type ForwardRefRenderFunction } from "react";
 import * as THREE from "three";
 import { useControls } from "leva";
 import { useFollowCam } from "./hooks/useFollowCam";
@@ -47,7 +47,7 @@ const getMovingDirection = (forward: boolean,
   if (forward) return pivot.rotation.y;
 };
 
-const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
+const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
   children,
   debug = false,
   capsuleHalfHeight = 0.35,
@@ -129,10 +129,19 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
   // Other rigibody props from parent
   ...props
 }: EcctrlProps, ref) => {
-  const characterRef = ref as RefObject<RapierRigidBody> || useRef<RapierRigidBody>()
+  const characterRef = useRef<CustomEcctrlRigidBody>(null)
+  // const characterRef = ref as RefObject<RapierRigidBody> || useRef<RapierRigidBody>()
   const characterModelRef = useRef<THREE.Group>();
   const characterModelIndicator: THREE.Object3D = useMemo(() => new THREE.Object3D(), [])
   const defaultControllerKeys = { forward: 12, backward: 13, leftward: 14, rightward: 15, jump: 2, action1: 11, action2: 3, action3: 1, action4: 0 }
+  useImperativeHandle(ref, () => {
+    if (characterRef.current) {
+      characterRef.current.rotateCamera = rotateCamera;
+      characterRef.current.rotateCharacterOnY = rotateCharacterOnY;
+      return characterRef.current!;
+    }
+    return null;
+  }, [characterRef.current]);
 
   /**
    * Mode setup
@@ -857,6 +866,24 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
     }
   }
 
+  /**
+   * Rotate camera function
+   */
+  const rotateCamera = (x: number, y: number) => {
+    pivot.rotation.y += y;
+    followCam.rotation.x = Math.min(
+      Math.max(followCam.rotation.x + x, camLowLimit),
+      camUpLimit
+    );
+  };
+
+  /**
+   * Rotate character on Y function
+   */
+  const rotateCharacterOnY = (rad: number) => {
+    modelEuler.y += rad;
+  };
+
   useEffect(() => {
     // Initialize directional light
     if (followLight) {
@@ -1511,6 +1538,11 @@ const Ecctrl: ForwardRefRenderFunction<RapierRigidBody, EcctrlProps> = ({
 export default forwardRef(Ecctrl);
 
 export type camListenerTargetType = "document" | "domElement";
+
+export interface CustomEcctrlRigidBody extends RapierRigidBody {
+  rotateCamera?: (x: number, y: number) => void;
+  rotateCharacterOnY?: (rad: number) => void;
+}
 
 export interface EcctrlProps extends RigidBodyProps {
   children?: ReactNode;

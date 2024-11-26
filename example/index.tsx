@@ -5,6 +5,7 @@ import Experience from "../example/Experience";
 import { Leva } from "leva";
 import { EcctrlJoystick } from "../src/EcctrlJoystick";
 import { Suspense, useEffect, useState } from "react";
+import { Bvh } from "@react-three/drei";
 
 const root = ReactDOM.createRoot(document.querySelector("#root"));
 
@@ -44,7 +45,9 @@ root.render(
       }}
     >
       <Suspense fallback={null}>
-        <Experience />
+        <Bvh firstHitOnly>
+          <Experience />
+        </Bvh>
       </Suspense>
     </Canvas>
   </>
