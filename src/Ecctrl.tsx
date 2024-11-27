@@ -69,6 +69,8 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
   camTargetPos = { x: 0, y: 0, z: 0 },
   camMoveSpeed = 1,
   camZoomSpeed = 1,
+  leftJoystickDeadZoneThreshold = 0,
+  rightJoystickDeadZoneThreshold = 0,
   camCollision = true,
   camCollisionOffset = 0.7,
   camCollisionSpeedMult = 4,
@@ -511,10 +513,16 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
     }
   }
 
+  const applyDeadZone = (value: number, threshold: number) => {
+    return Math.abs(value) > threshold ? value : 0;
+  }
+
   const handleSticks = (axes: readonly number[]) => {
+    const adjustedLeftStickX = applyDeadZone(axes[0], leftJoystickDeadZoneThreshold);
+    const adjustedLeftStickY = applyDeadZone(axes[1], leftJoystickDeadZoneThreshold);
     // Gamepad first joystick trigger the EcctrlJoystick event to move the character
-    if (Math.abs(axes[0]) > 0 || Math.abs(axes[1]) > 0) {
-      gamepadJoystickVec2.set(axes[0], -axes[1])
+    if (Math.abs(adjustedLeftStickX) > 0 || Math.abs(adjustedLeftStickY) > 0) {
+      gamepadJoystickVec2.set(adjustedLeftStickX, -adjustedLeftStickY)
       gamepadJoystickDis = Math.min(Math.sqrt(Math.pow(gamepadJoystickVec2.x, 2) + Math.pow(gamepadJoystickVec2.y, 2)), 1)
       gamepadJoystickAng = gamepadJoystickVec2.angle()
       const runState = gamepadJoystickDis > 0.7
@@ -524,9 +532,11 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
       gamepadJoystickAng = 0
       resetJoystick()
     }
+    const adjustedRightStickX = applyDeadZone(axes[2], rightJoystickDeadZoneThreshold);
+    const adjustedRightStickY = applyDeadZone(axes[3], rightJoystickDeadZoneThreshold);
     // Gamepad second joystick trigger the useFollowCam event to move the camera
-    if (Math.abs(axes[2]) > 0 || Math.abs(axes[3]) > 0) {
-      joystickCamMove(axes[2], axes[3])
+    if (Math.abs(adjustedRightStickX) > 0 || Math.abs(adjustedRightStickY) > 0) {
+      joystickCamMove(adjustedRightStickX, adjustedRightStickY);
     }
   }
 
@@ -1566,6 +1576,8 @@ export interface EcctrlProps extends RigidBodyProps {
   camTargetPos?: { x: number, y: number, z: number };
   camMoveSpeed?: number;
   camZoomSpeed?: number;
+  leftJoystickDeadZoneThreshold?: number;
+  rightJoystickDeadZoneThreshold?: number;
   camCollision?: boolean;
   camCollisionOffset?: number;
   camCollisionSpeedMult?: number;
