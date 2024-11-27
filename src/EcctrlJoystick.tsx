@@ -1,8 +1,9 @@
 import * as THREE from "three"
-import { Canvas, type ThreeElements } from "@react-three/fiber";
-import React, { useEffect, useState, forwardRef, useMemo, type ReactNode, useCallback, Suspense } from "react";
+import { Canvas, type Color, type ThreeElements } from "@react-three/fiber";
+import React, { useEffect, useState, forwardRef, useMemo, type ReactNode, useCallback, Suspense, useRef } from "react";
 import { useSpring, animated } from '@react-spring/three'
 import { useJoystickControls } from "./stores/useJoystickControls";
+import { Text } from "@react-three/drei";
 
 const JoystickComponents = (props: EcctrlJoystickProps) => {
     /**
@@ -138,7 +139,7 @@ const JoystickComponents = (props: EcctrlJoystickProps) => {
     )
 }
 
-const ButtonComponents = ({ buttonNumber = 1, ...props }: EcctrlJoystickProps) => {
+const ButtonComponents = ({ buttonNumber = 1, customButtons = [], ...props }: EcctrlJoystickProps) => {
     /**
     * Button component geometries
     */
@@ -165,8 +166,20 @@ const ButtonComponents = ({ buttonNumber = 1, ...props }: EcctrlJoystickProps) =
     /**
     * Animation preset
     */
-    const [springs, api] = useSpring(
-        () => ({
+    type ButtonSprings = {
+        [key in `buttonTop${number}BaseScaleY` | `buttonTop${number}BaseScaleXAndZ`]: number
+    } & {
+        [key in `buttonTopCustom${number}BaseScaleY` | `buttonTopCustom${number}BaseScaleXAndZ`]?: number
+    }
+    let initialSprings = useRef<ButtonSprings>({});
+    const [springs, api] = useSpring<ButtonSprings>(() => {
+        for (let index = 0; index < customButtons.length; index++) {
+            initialSprings.current[`buttonTopCustom${index}BaseScaleY`] = 1;
+            initialSprings.current[`buttonTopCustom${index}BaseScaleXAndZ`] = 1;
+        }
+
+        initialSprings.current = {
+            ...initialSprings.current,
             buttonTop1BaseScaleY: 1,
             buttonTop1BaseScaleXAndZ: 1,
             buttonTop2BaseScaleY: 1,
@@ -176,12 +189,17 @@ const ButtonComponents = ({ buttonNumber = 1, ...props }: EcctrlJoystickProps) =
             buttonTop4BaseScaleY: 1,
             buttonTop4BaseScaleXAndZ: 1,
             buttonTop5BaseScaleY: 1,
-            buttonTop5BaseScaleXAndZ: 1,
+            buttonTop5BaseScaleXAndZ: 1
+        }
+
+        return {
+            ...initialSprings.current,
             config: {
                 tension: 600
             }
-        })
-    )
+            
+        }
+    });
 
     /**
     * Button store setup
@@ -194,45 +212,57 @@ const ButtonComponents = ({ buttonNumber = 1, ...props }: EcctrlJoystickProps) =
     const releaseAllButtons = useJoystickControls((state) => state.releaseAllButtons)
 
     // Pointer down function
-    const onPointerDown = (number: number) => {
-        switch (number) {
-            case 1:
-                pressButton1()
-                api.start({
-                    buttonTop1BaseScaleY: 0.5,
-                    buttonTop1BaseScaleXAndZ: 1.15,
-                })
-                break;
-            case 2:
-                pressButton2()
-                api.start({
-                    buttonTop2BaseScaleY: 0.5,
-                    buttonTop2BaseScaleXAndZ: 1.15,
-                })
-                break;
-            case 3:
-                pressButton3()
-                api.start({
-                    buttonTop3BaseScaleY: 0.5,
-                    buttonTop3BaseScaleXAndZ: 1.15,
-                })
-                break;
-            case 4:
-                pressButton4()
-                api.start({
-                    buttonTop4BaseScaleY: 0.5,
-                    buttonTop4BaseScaleXAndZ: 1.15,
-                })
-                break;
-            case 5:
-                pressButton5()
-                api.start({
-                    buttonTop5BaseScaleY: 0.5,
-                    buttonTop5BaseScaleXAndZ: 1.15,
-                })
-                break;
-            default:
-                break;
+    const onPointerDown = (numberOrKey: number | string, callback?: () => void) => {
+        if (typeof numberOrKey === "number") {
+            switch (numberOrKey) {
+                case 1:
+                    pressButton1()
+                    api.start({
+                        buttonTop1BaseScaleY: 0.5,
+                        buttonTop1BaseScaleXAndZ: 1.15,
+                    })
+                    break;
+                case 2:
+                    pressButton2()
+                    api.start({
+                        buttonTop2BaseScaleY: 0.5,
+                        buttonTop2BaseScaleXAndZ: 1.15,
+                    })
+                    break;
+                case 3:
+                    pressButton3()
+                    api.start({
+                        buttonTop3BaseScaleY: 0.5,
+                        buttonTop3BaseScaleXAndZ: 1.15,
+                    })
+                    break;
+                case 4:
+                    pressButton4()
+                    api.start({
+                        buttonTop4BaseScaleY: 0.5,
+                        buttonTop4BaseScaleXAndZ: 1.15,
+                    })
+                    break;
+                case 5:
+                    pressButton5()
+                    api.start({
+                        buttonTop5BaseScaleY: 0.5,
+                        buttonTop5BaseScaleXAndZ: 1.15,
+                    })
+                    break;
+                default:
+                    break;
+            }
+
+        } else if (typeof numberOrKey === "string" && numberOrKey.toLowerCase().startsWith("custom")) {
+            api.start({
+                [`buttonTop${numberOrKey}BaseScaleY`]: 0.5,
+                [`buttonTop${numberOrKey}BaseScaleXAndZ`]: 1.15,
+            });
+
+            if (callback) {
+                callback();
+            }
         }
     }
 
@@ -240,16 +270,7 @@ const ButtonComponents = ({ buttonNumber = 1, ...props }: EcctrlJoystickProps) =
     const onPointerUp = () => {
         releaseAllButtons();
         api.start({
-            buttonTop1BaseScaleY: 1,
-            buttonTop1BaseScaleXAndZ: 1,
-            buttonTop2BaseScaleY: 1,
-            buttonTop2BaseScaleXAndZ: 1,
-            buttonTop3BaseScaleY: 1,
-            buttonTop3BaseScaleXAndZ: 1,
-            buttonTop4BaseScaleY: 1,
-            buttonTop4BaseScaleXAndZ: 1,
-            buttonTop5BaseScaleY: 1,
-            buttonTop5BaseScaleXAndZ: 1,
+            ...initialSprings.current
         })
     }
 
@@ -263,6 +284,38 @@ const ButtonComponents = ({ buttonNumber = 1, ...props }: EcctrlJoystickProps) =
 
     return (
         <Suspense fallback="null">
+            {customButtons.map((customButton, index) => (
+                <animated.group
+                    key={`custom${index}`}
+                    scale-x={springs[`buttonTopCustom${index}BaseScaleXAndZ`]}
+                    scale-y={springs[`buttonTopCustom${index}BaseScaleY`]}
+                    scale-z={springs[`buttonTopCustom${index}BaseScaleXAndZ`]}
+                    rotation={[-Math.PI / 2, 0, 0]}
+                    onPointerDown={(event) => {
+                        event.stopPropagation();
+                        onPointerDown(`Custom${index}`, customButton.callback);
+                    }}
+                    position={customButton.position}
+                >
+                    <mesh geometry={buttonLargeBaseGeo} material={buttonBaseMaterial} {...customButton.buttonLargeBaseProps} />
+                    <mesh geometry={buttonTop1Geo} material={buttonTop1Material} position={[0, -0.3, 0]} {...customButton.buttonTopProps} />
+                    {customButton.text && (
+                        <Text
+                            position={customButton.text.position || [0, 0.1, 0]}
+                            fontSize={customButton.text.fontSize || 0.25}
+                            color={customButton.text.color || "white"}
+                            fontWeight={customButton.text.fontWeight || "normal"}
+                            anchorX="center"
+                            anchorY="middle"
+                            rotation={customButton.text.rotation || [Math.PI / 2, 0, 0]}
+                            material={new THREE.MeshBasicMaterial({ depthTest: false, depthWrite: false })}
+                            renderOrder={2}
+                        >
+                            {customButton.text.value}
+                        </Text>
+                    )}
+                </animated.group>
+            ))}
             {/* Button 1 */}
             {buttonNumber > 0 &&
                 <animated.group
@@ -273,6 +326,21 @@ const ButtonComponents = ({ buttonNumber = 1, ...props }: EcctrlJoystickProps) =
                     position={props.buttonGroup1Position || (buttonNumber === 1 ? [0, 0, 0] : [2, 1, 0])}>
                     <mesh geometry={buttonLargeBaseGeo} material={buttonBaseMaterial} {...props.buttonLargeBaseProps} onPointerDown={() => onPointerDown(1)} />
                     <mesh geometry={buttonTop1Geo} material={buttonTop1Material} position={[0, -0.3, 0]} {...props.buttonTop1Props} />
+                    {props.buttonText1Props && (
+                        <Text
+                            position={props.buttonText1Props.position || [0, 0.1, 0]}
+                            fontSize={props.buttonText1Props.fontSize || 0.25}
+                            color={props.buttonText1Props.color || "white"}
+                            fontWeight={props.buttonText1Props.fontWeight || "normal"}
+                            anchorX="center"
+                            anchorY="middle"
+                            rotation={props.buttonText1Props.rotation || [Math.PI / 2, 0, 0]}
+                            material={new THREE.MeshBasicMaterial({ depthTest: false, depthWrite: false })}
+                            renderOrder={2}
+                        >
+                            {props.buttonText1Props.value}
+                        </Text>
+                    )}
                 </animated.group>}
             {/* Button 2 */}
             {buttonNumber > 1 &&
@@ -284,6 +352,21 @@ const ButtonComponents = ({ buttonNumber = 1, ...props }: EcctrlJoystickProps) =
                     position={props.buttonGroup2Position || [0.5, -1.3, 0]}>
                     <mesh geometry={buttonLargeBaseGeo} material={buttonBaseMaterial} {...props.buttonLargeBaseProps} onPointerDown={() => onPointerDown(2)} />
                     <mesh geometry={buttonTop2Geo} material={buttonTop2Material} position={[0, -0.3, 0]} {...props.buttonTop2Props} />
+                    {props.buttonText2Props && (
+                        <Text
+                            position={props.buttonText2Props.position || [0, 0.1, 0]}
+                            fontSize={props.buttonText2Props.fontSize || 0.25}
+                            color={props.buttonText2Props.color || "white"}
+                            fontWeight={props.buttonText2Props.fontWeight || "normal"}
+                            anchorX="center"
+                            anchorY="middle"
+                            rotation={props.buttonText2Props.rotation || [Math.PI / 2, 0, 0]}
+                            material={new THREE.MeshBasicMaterial({ depthTest: false, depthWrite: false })}
+                            renderOrder={2}
+                        >
+                            {props.buttonText2Props.value}
+                        </Text>
+                    )}
                 </animated.group>}
             {/* Button 3 */}
             {buttonNumber > 2 &&
@@ -295,6 +378,21 @@ const ButtonComponents = ({ buttonNumber = 1, ...props }: EcctrlJoystickProps) =
                     position={props.buttonGroup3Position || [-1, 1, 0]}>
                     <mesh geometry={buttonSmallBaseGeo} material={buttonBaseMaterial} {...props.buttonSmallBaseProps} onPointerDown={() => onPointerDown(3)} />
                     <mesh geometry={buttonTop3Geo} material={buttonTop3Material} position={[0, -0.3, 0]} {...props.buttonTop3Props} />
+                    {props.buttonText3Props && (
+                        <Text
+                            position={props.buttonText3Props.position || [0, 0.1, 0]}
+                            fontSize={props.buttonText3Props.fontSize || 0.25}
+                            color={props.buttonText3Props.color || "white"}
+                            fontWeight={props.buttonText3Props.fontWeight || "normal"}
+                            anchorX="center"
+                            anchorY="middle"
+                            rotation={props.buttonText3Props.rotation || [Math.PI / 2, 0, 0]}
+                            material={new THREE.MeshBasicMaterial({ depthTest: false, depthWrite: false })}
+                            renderOrder={2}
+                        >
+                            {props.buttonText3Props.value}
+                        </Text>
+                    )}
                 </animated.group>}
             {/* Button 4 */}
             {buttonNumber > 3 &&
@@ -306,6 +404,21 @@ const ButtonComponents = ({ buttonNumber = 1, ...props }: EcctrlJoystickProps) =
                     position={props.buttonGroup4Position || [-2, -1.3, 0]}>
                     <mesh geometry={buttonSmallBaseGeo} material={buttonBaseMaterial} {...props.buttonSmallBaseProps} onPointerDown={() => onPointerDown(4)} />
                     <mesh geometry={buttonTop4Geo} material={buttonTop4Material} position={[0, -0.3, 0]} {...props.buttonTop4Props} />
+                    {props.buttonText4Props && (
+                        <Text
+                            position={props.buttonText4Props.position || [0, 0.1, 0]}
+                            fontSize={props.buttonText4Props.fontSize || 0.25}
+                            color={props.buttonText4Props.color || "white"}
+                            fontWeight={props.buttonText4Props.fontWeight || "normal"}
+                            anchorX="center"
+                            anchorY="middle"
+                            rotation={props.buttonText4Props.rotation || [Math.PI / 2, 0, 0]}
+                            material={new THREE.MeshBasicMaterial({ depthTest: false, depthWrite: false })}
+                            renderOrder={2}
+                        >
+                            {props.buttonText4Props.value}
+                        </Text>
+                    )}
                 </animated.group>}
             {/* Button 5 */}
             {buttonNumber > 4 &&
@@ -317,6 +430,21 @@ const ButtonComponents = ({ buttonNumber = 1, ...props }: EcctrlJoystickProps) =
                     position={props.buttonGroup5Position || [0.4, 2.9, 0]}>
                     <mesh geometry={buttonSmallBaseGeo} material={buttonBaseMaterial} {...props.buttonSmallBaseProps} onPointerDown={() => onPointerDown(5)} />
                     <mesh geometry={buttonTop5Geo} material={buttonTop5Material} position={[0, -0.3, 0]} {...props.buttonTop5Props} />
+                    {props.buttonText5Props && (
+                        <Text
+                            position={props.buttonText5Props.position || [0, 0.1, 0]}
+                            fontSize={props.buttonText5Props.fontSize || 0.25}
+                            color={props.buttonText5Props.color || "white"}
+                            fontWeight={props.buttonText5Props.fontWeight || "normal"}
+                            anchorX="center"
+                            anchorY="middle"
+                            rotation={props.buttonText5Props.rotation || [Math.PI / 2, 0, 0]}
+                            material={new THREE.MeshBasicMaterial({ depthTest: false, depthWrite: false })}
+                            renderOrder={2}
+                        >
+                            {props.buttonText5Props.value}
+                        </Text>
+                    )}
                 </animated.group>}
         </Suspense>
     )
@@ -389,6 +517,15 @@ export const EcctrlJoystick = forwardRef<HTMLDivElement, EcctrlJoystickProps>((p
     )
 })
 
+type TextProps = {
+    value: string;
+    fontSize?: number;
+    fontWeight?: number | string;
+    color?: Color;
+    position?: [x: number, y: number, z: number];
+    rotation?: [x: number, y: number, z: number];
+}
+
 export type EcctrlJoystickProps = {
     // Joystick props
     children?: ReactNode;
@@ -421,4 +558,14 @@ export type EcctrlJoystickProps = {
     buttonTop3Props?: ThreeElements['mesh'];
     buttonTop4Props?: ThreeElements['mesh'];
     buttonTop5Props?: ThreeElements['mesh'];
+    customButtons?: EcctrlJoystickProps[];
+    position?: [x: number, y: number, z: number];
+    callback?: () => void;
+    buttonTopProps?: ThreeElements['mesh'];
+    text?: TextProps;
+    buttonText1Props?: TextProps;
+    buttonText2Props?: TextProps;
+    buttonText3Props?: TextProps;
+    buttonText4Props?: TextProps;
+    buttonText5Props?: TextProps;
 };
