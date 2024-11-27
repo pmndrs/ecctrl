@@ -69,6 +69,8 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
   camTargetPos = { x: 0, y: 0, z: 0 },
   camMoveSpeed = 1,
   camZoomSpeed = 1,
+  camInvertX = false,
+  camInvertY = false,
   leftJoystickDeadZoneThreshold = 0,
   rightJoystickDeadZoneThreshold = 0,
   camCollision = true,
@@ -579,6 +581,8 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
     camCollisionOffset,
     camCollisionSpeedMult,
     camListenerTarget,
+    camInvertX,
+    camInvertY
   };
 
   /**
@@ -1576,6 +1580,8 @@ export interface EcctrlProps extends RigidBodyProps {
   camTargetPos?: { x: number, y: number, z: number };
   camMoveSpeed?: number;
   camZoomSpeed?: number;
+  camInvertX?: boolean,
+  camInvertY?: boolean,
   leftJoystickDeadZoneThreshold?: number;
   rightJoystickDeadZoneThreshold?: number;
   camCollision?: boolean;
