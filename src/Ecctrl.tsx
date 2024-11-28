@@ -12,7 +12,7 @@ import {
 import { useEffect, useRef, useMemo, useState, useImperativeHandle, forwardRef, type ReactNode, type ForwardRefRenderFunction } from "react";
 import * as THREE from "three";
 import { useControls } from "leva";
-import { useFollowCam } from "./hooks/useFollowCam";
+import { updateFollowCamRotation, useFollowCam } from "./hooks/useFollowCam";
 import { useGame } from "./stores/useGame";
 import { useJoystickControls } from "./stores/useJoystickControls";
 import { QueryFilterFlags } from "@dimforge/rapier3d-compat";
@@ -871,10 +871,11 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
    */
   const rotateCamera = (x: number, y: number) => {
     pivot.rotation.y += y;
-    followCam.rotation.x = Math.min(
+    const limitedX = Math.min(
       Math.max(followCam.rotation.x + x, camLowLimit),
       camUpLimit
     );
+    updateFollowCamRotation(followCam, limitedX);
   };
 
   /**
