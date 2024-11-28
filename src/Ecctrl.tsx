@@ -138,6 +138,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
     if (characterRef.current) {
       characterRef.current.rotateCamera = rotateCamera;
       characterRef.current.rotateCharacterOnY = rotateCharacterOnY;
+      characterRef.current.setCameraRotation = setCameraRotation;
       return characterRef.current!;
     }
     return null;
@@ -885,6 +886,20 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
     modelEuler.y += rad;
   };
 
+  /**
+   * Set camera rotation
+   * @param {number} x - The x angle in radians
+   * @param {number} y - The y angle in radians
+   */
+  const setCameraRotation = (x: number, y: number) => {
+    pivot.rotation.y = y;
+    const limitedX = Math.min(
+      Math.max(x, camLowLimit),
+      camUpLimit
+    );
+    updateFollowCamRotation(followCam, limitedX);
+  };
+
   useEffect(() => {
     // Initialize directional light
     if (followLight) {
@@ -1543,6 +1558,7 @@ export type camListenerTargetType = "document" | "domElement";
 export interface CustomEcctrlRigidBody extends RapierRigidBody {
   rotateCamera?: (x: number, y: number) => void;
   rotateCharacterOnY?: (rad: number) => void;
+  setCameraRotation?: (x: number, y: number) => void;
 }
 
 export interface EcctrlProps extends RigidBodyProps {
