@@ -63,6 +63,6 @@
     "dev": "vite",
     "build": "vite build && tsc",
     "preview": "vite preview",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "lint": "eslint . --ext ts,tsx,js,jsx --report-unused-disable-directives --max-warnings 0"
   }
 }
