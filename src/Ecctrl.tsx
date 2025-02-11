@@ -26,7 +26,7 @@ import React from "react";
 export { EcctrlAnimation } from "./EcctrlAnimation";
 export { useFollowCam } from "./hooks/useFollowCam";
 export { useGame } from "./stores/useGame";
-export { EcctrlJoystick } from "../src/EcctrlJoystick";
+export { EcctrlJoystick } from "./EcctrlJoystick";
 export { useJoystickControls } from "./stores/useJoystickControls";
 
 // Retrieve current moving direction of the character
