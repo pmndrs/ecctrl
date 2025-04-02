@@ -1,3 +1,4 @@
+import React from "react";
 import { useGLTF, useAnimations } from "@react-three/drei";
 import { useEffect, useRef, Suspense } from "react";
 import * as THREE from "three";
