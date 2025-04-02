@@ -30,14 +30,14 @@ export const useFollowCam = ({
   const originZDis = useRef<number>(camInitDis ?? -5)
   const pivot = useMemo(() => new THREE.Object3D(), []);
   const followCam = useMemo(() => {
-			const origin = new THREE.Object3D();
-			origin.position.set(
-				0,
-				originZDis.current * Math.sin(-camInitDir.x),
-				originZDis.current * Math.cos(-camInitDir.x),
-			);
-			return origin;
-		}, [camInitDir]);
+    const origin = new THREE.Object3D();
+    origin.position.set(
+      0,
+      originZDis.current * Math.sin(-camInitDir.x),
+      originZDis.current * Math.cos(-camInitDir.x)
+    );
+    return origin;
+  }, []);
 
   /** Camera collison detect setups */
   let smallestDistance = null;

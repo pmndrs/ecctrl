@@ -5,7 +5,7 @@ import {
   RigidBody,
   CapsuleCollider,
   useRapier,
-  RapierRigidBody,
+  type RapierRigidBody,
   type RigidBodyProps,
   CylinderCollider,
 } from "@react-three/rapier";
@@ -131,7 +131,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
 }: EcctrlProps, ref) => {
   const characterRef = useRef<CustomEcctrlRigidBody>(null)
   // const characterRef = ref as RefObject<RapierRigidBody> || useRef<RapierRigidBody>()
-  const characterModelRef = useRef<THREE.Group>();
+  const characterModelRef = useRef<THREE.Group>(null!);
   const characterModelIndicator: THREE.Object3D = useMemo(() => new THREE.Object3D(), [])
   const defaultControllerKeys = { forward: 12, backward: 13, leftward: 14, rightward: 15, jump: 2, action1: 11, action2: 3, action3: 1, action4: 0 }
   useImperativeHandle(ref, () => {
@@ -616,7 +616,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
   let actualSlopeAngle: number = null;
   const actualSlopeNormalVec: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
   const floorNormal: THREE.Vector3 = useMemo(() => new THREE.Vector3(0, 1, 0), []);
-  const slopeRayOriginRef = useRef<THREE.Mesh>();
+  const slopeRayOriginRef = useRef<THREE.Mesh>(null!);
   const slopeRayorigin: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
   const slopeRayCast = new rapier.Ray(slopeRayorigin, slopeRayDir);
   let slopeRayHit: RayColliderHit | null = null;
@@ -629,7 +629,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
   const crossVector: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
   const pointToPoint: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
   const getMoveToPoint = useGame((state) => state.getMoveToPoint);
-  const bodySensorRef = useRef<Collider>();
+  const bodySensorRef = useRef<Collider>(null!);
   const handleOnIntersectionEnter = () => {
     isBodyHitWall = true
   }
@@ -731,7 +731,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
      * Check if character complete turned to the wanted direction
      */
     characterRotated =
-      Math.sin(characterModelIndicator.rotation.y).toFixed(3) ==
+      Math.sin(characterModelIndicator.rotation.y).toFixed(3) ===
       Math.sin(modelEuler.y).toFixed(3);
 
     // If character hasn't complete turning, change the impulse quaternion follow characterModelIndicator quaternion
@@ -740,7 +740,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
         moveForceNeeded.x *
         turnVelMultiplier *
         (canJump ? 1 : airDragMultiplier), // if it's in the air, give it less control
-        slopeAngle === null || slopeAngle == 0 // if it's on a slope, apply extra up/down force to the body
+        slopeAngle === null || slopeAngle === 0 // if it's on a slope, apply extra up/down force to the body
           ? 0
           : movingDirection.y *
           turnVelMultiplier *
@@ -757,7 +757,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
     else {
       moveImpulse.set(
         moveForceNeeded.x * (canJump ? 1 : airDragMultiplier),
-        slopeAngle === null || slopeAngle == 0 // if it's on a slope, apply extra up/down force to the body
+        slopeAngle === null || slopeAngle === 0 // if it's on a slope, apply extra up/down force to the body
           ? 0
           : movingDirection.y *
           (movingDirection.y > 0 // check it is on slope up or slope down
