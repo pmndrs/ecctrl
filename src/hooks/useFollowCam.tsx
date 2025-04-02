@@ -1,10 +1,9 @@
 import { useThree } from "@react-three/fiber";
-// import { useRapier } from "@react-three/rapier";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { camListenerTargetType } from "../Ecctrl";
 
-export const useFollowCam = function ({
+export const useFollowCam = ({
   disableFollowCam = false,
   disableFollowCamPos = null,
   disableFollowCamTarget = null,
@@ -20,7 +19,7 @@ export const useFollowCam = function ({
   camCollisionSpeedMult = 4,
   camListenerTarget = "domElement",
   ...props
-}: UseFollowCamProps = {}) {
+}: UseFollowCamProps = {}) => {
   const { scene, camera, gl } = useThree();
   // const { rapier, world } = useRapier();
 
@@ -31,14 +30,14 @@ export const useFollowCam = function ({
   const originZDis = useRef<number>(camInitDis ?? -5)
   const pivot = useMemo(() => new THREE.Object3D(), []);
   const followCam = useMemo(() => {
-    const origin = new THREE.Object3D();
-    origin.position.set(
-      0,
-      originZDis.current * Math.sin(-camInitDir.x),
-      originZDis.current * Math.cos(-camInitDir.x)
-    );
-    return origin;
-  }, []);
+			const origin = new THREE.Object3D();
+			origin.position.set(
+				0,
+				originZDis.current * Math.sin(-camInitDir.x),
+				originZDis.current * Math.cos(-camInitDir.x),
+			);
+			return origin;
+		}, [camInitDir]);
 
   /** Camera collison detect setups */
   let smallestDistance = null;

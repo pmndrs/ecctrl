@@ -1005,9 +1005,9 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
   useEffect(() => {
     // Lock character rotations at Y axis
     characterRef.current.setEnabledRotations(
-      autoBalance ? true : false,
-      autoBalance ? true : false,
-      autoBalance ? true : false,
+      autoBalance,
+      autoBalance,
+      autoBalance,
       false
     );
 
@@ -1401,7 +1401,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
     /**
      * Detect character falling state
      */
-    isFalling = (currentVel.y < 0 && !canJump) ? true : false
+    isFalling = !!(currentVel.y < 0 && !canJump)
 
     /**
      * Setup max falling speed && extra falling gravity
