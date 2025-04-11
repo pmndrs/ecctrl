@@ -14,7 +14,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pmndrs/ecctrl.git"
+    "url": "git+https://github.com/planetarium/ecctrl.git"
   },
   "files": [
     "dist/*",
@@ -42,7 +42,7 @@
   },
   "dependencies": {
     "@react-spring/three": "^9.7.5",
-    "@types/three": "^0.170.0",
+    "@types/three": "^0.174.0",
     "leva": "^0.9.35",
     "zustand": "^5.0.1"
   },
@@ -52,7 +52,7 @@
     "@react-three/rapier": ">=1.5.0",
     "react": ">=18",
     "react-dom": ">=18.0",
-    "three": ">=0.170.0"
+    "three": "^0.174.0"
   },
   "scripts": {
     "dev": "vite",
