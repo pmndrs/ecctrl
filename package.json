@@ -31,28 +31,29 @@
   },
   "sideEffects": false,
   "devDependencies": {
-    "@react-three/drei": "^9.117.3",
-    "@react-three/fiber": "^8.17.10",
+    "@react-three/drei": "^10.3.0",
+    "@react-three/fiber": "^9.1.2",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.3",
+    "@vitejs/plugin-react": "^4.6.0",
     "r3f-perf": "^7.2.3",
-    "typescript": "^5.7.2",
-    "vite": "^5.4.11"
+    "typescript": "^5.8.3",
+    "vite": "^7.0.0"
   },
   "dependencies": {
-    "@react-spring/three": "^9.7.5",
-    "@types/three": "^0.170.0",
+    "@react-spring/three": "^10.0.1",
+    "@types/three": "^0.177.0",
     "leva": "^0.9.35",
+    "three": ">=0.177.0",
     "zustand": "^5.0.1"
   },
   "peerDependencies": {
     "@react-three/drei": ">=9.0",
-    "@react-three/fiber": ">=8.0",
-    "@react-three/rapier": ">=1.5.0",
-    "react": ">=18",
-    "react-dom": ">=18.0",
-    "three": ">=0.170.0"
+    "@react-three/fiber": ">=9.0",
+    "@react-three/rapier": ">=2.0.0",
+    "react": ">=19.1.0",
+    "react-dom": ">=19.1.0",
+    "three": ">=0.177.0"
   },
   "scripts": {
     "dev": "vite",

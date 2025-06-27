@@ -10,10 +10,10 @@ import { useRef, useMemo } from "react";
 import * as THREE from "three";
 
 export default function DynamicPlatforms() {
-  const sideMovePlatformRef = useRef<RapierRigidBody>();
-  const verticalMovePlatformRef = useRef<RapierRigidBody>();
-  const rotatePlatformRef = useRef<RapierRigidBody>();
-  const rotationDrumRef = useRef<RapierRigidBody>();
+  const sideMovePlatformRef = useRef();
+  const verticalMovePlatformRef = useRef();
+  const rotatePlatformRef = useRef();
+  const rotationDrumRef = useRef();
 
   // Initializ animation settings
   let time = null;

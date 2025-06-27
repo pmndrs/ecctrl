@@ -10,7 +10,7 @@
     "strict": true,
     "emitDeclarationOnly": true,
     "moduleResolution": "node",
-    "strictNullChecks": false,
+    "strictNullChecks": true,
     "jsx": "react",
     "declaration": true,
     "lib": ["es2022", "dom"]

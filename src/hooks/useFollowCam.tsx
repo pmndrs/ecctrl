@@ -25,8 +25,8 @@ export const useFollowCam = function ({
   // const { rapier, world } = useRapier();
 
   let isMouseDown = false;
-  let previousTouch1: Touch = null;
-  let previousTouch2: Touch = null;
+  let previousTouch1: Touch | null = null;
+  let previousTouch2: Touch | null = null;
 
   const originZDis = useRef<number>(camInitDis ?? -5)
   const pivot = useMemo(() => new THREE.Object3D(), []);
@@ -127,7 +127,7 @@ export const useFollowCam = function ({
     }
 
     // Two fingers touch to zoom in/out camera
-    if (previousTouch2) {
+    if (previousTouch1 && previousTouch2) {
       const prePinchDis = Math.hypot(
         previousTouch1.pageX - previousTouch2.pageX,
         previousTouch1.pageY - previousTouch2.pageY
@@ -247,7 +247,6 @@ export const useFollowCam = function ({
     scene.children.forEach((child) => customTraverseAdd(child));
 
     // Prepare for followCam and pivot point
-    // disableFollowCam ? followCam.remove(camera) : followCam.add(camera);
     pivot.add(followCam);
     scene.add(pivot);
 
@@ -287,8 +286,6 @@ export const useFollowCam = function ({
         document.removeEventListener("touchend", onTouchEnd);
         document.removeEventListener("touchmove", onTouchMove);
       }
-      // Remove camera from followCam
-      // followCam.remove(camera);
     };
   }, [])
 
@@ -317,8 +314,8 @@ export const useFollowCam = function ({
 
 export type UseFollowCamProps = {
   disableFollowCam?: boolean;
-  disableFollowCamPos?: { x: number, y: number, z: number };
-  disableFollowCamTarget?: { x: number, y: number, z: number };
+  disableFollowCamPos?: { x: number, y: number, z: number } | null;
+  disableFollowCamTarget?: { x: number, y: number, z: number } |null;
   camInitDis?: number;
   camMaxDis?: number;
   camMinDis?: number;

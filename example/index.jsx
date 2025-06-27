@@ -1,7 +1,7 @@
 import "./style.css";
 import ReactDOM from "react-dom/client";
 import { Canvas } from "@react-three/fiber";
-import Experience from "../example/Experience";
+import Experience from "./Experience";
 import { Leva } from "leva";
 import { EcctrlJoystick } from "../src/EcctrlJoystick";
 import { Suspense, useEffect, useState } from "react";
@@ -40,7 +40,7 @@ root.render(
       }}
       onPointerDown={(e) => {
         if (e.pointerType === 'mouse') {
-          (e.target as HTMLCanvasElement).requestPointerLock()
+          e.target.requestPointerLock()
         }
       }}
     >

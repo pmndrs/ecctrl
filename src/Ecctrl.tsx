@@ -45,9 +45,10 @@ const getMovingDirection = (forward: boolean,
   if (leftward) return pivot.rotation.y + Math.PI / 2;
   if (rightward) return pivot.rotation.y - Math.PI / 2;
   if (forward) return pivot.rotation.y;
+  return null;
 };
 
-const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
+const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody | null, EcctrlProps> = ({
   children,
   debug = false,
   capsuleHalfHeight = 0.35,
@@ -129,12 +130,12 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
   // Other rigibody props from parent
   ...props
 }: EcctrlProps, ref) => {
-  const characterRef = useRef<CustomEcctrlRigidBody>(null)
+  const characterRef = useRef<CustomEcctrlRigidBody | null>(null)
   // const characterRef = ref as RefObject<RapierRigidBody> || useRef<RapierRigidBody>()
-  const characterModelRef = useRef<THREE.Group>();
+  const characterModelRef = useRef<THREE.Group | null>(null);
   const characterModelIndicator: THREE.Object3D = useMemo(() => new THREE.Object3D(), [])
   const defaultControllerKeys = { forward: 12, backward: 13, leftward: 14, rightward: 15, jump: 2, action1: 11, action2: 3, action3: 1, action4: 0 }
-  useImperativeHandle(ref, () => {
+  useImperativeHandle(ref as React.Ref<CustomEcctrlRigidBody | null>, () => {
     if (characterRef.current) {
       characterRef.current.rotateCamera = rotateCamera;
       characterRef.current.rotateCharacterOnY = rotateCharacterOnY;
@@ -549,7 +550,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
   /**
    * Initial light setup
    */
-  let dirLight: THREE.DirectionalLight = null;
+  let dirLight: THREE.DirectionalLight;
 
   /**
    * Follow camera initial setups from props
@@ -611,12 +612,12 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
   /**
    * Slope detection ray setup
    */
-  let slopeAngle: number = null;
-  let actualSlopeNormal: Vector = null;
-  let actualSlopeAngle: number = null;
+  let slopeAngle: number = 0;
+  let actualSlopeNormal: Vector | null = null;
+  let actualSlopeAngle: number = 0;
   const actualSlopeNormalVec: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
   const floorNormal: THREE.Vector3 = useMemo(() => new THREE.Vector3(0, 1, 0), []);
-  const slopeRayOriginRef = useRef<THREE.Mesh>();
+  const slopeRayOriginRef = useRef<THREE.Mesh | null>(null);
   const slopeRayorigin: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
   const slopeRayCast = new rapier.Ray(slopeRayorigin, slopeRayDir);
   let slopeRayHit: RayColliderHit | null = null;
@@ -629,7 +630,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
   const crossVector: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
   const pointToPoint: THREE.Vector3 = useMemo(() => new THREE.Vector3(), []);
   const getMoveToPoint = useGame((state) => state.getMoveToPoint);
-  const bodySensorRef = useRef<Collider>();
+  const bodySensorRef = useRef<Collider | null>(null);
   const handleOnIntersectionEnter = () => {
     isBodyHitWall = true
   }
@@ -647,6 +648,8 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
     slopeAngle: number,
     movingObjectVelocity: THREE.Vector3
   ) => {
+    if (!characterRef.current) return
+
     /**
      * Setup moving direction
      */
@@ -784,6 +787,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
    * Character auto balance function
    */
   const autoBalanceCharacter = () => {
+    if (!characterRef.current) return
     // Match body component to character model rotation on Y
     bodyFacingVec.set(0, 0, 1).applyQuaternion(quat(characterRef.current.rotation()))
     bodyBalanceVec.set(0, 1, 0).applyQuaternion(quat(characterRef.current.rotation()))
@@ -793,7 +797,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
     bodyBalanceVecOnZ.set(bodyBalanceVec.x, bodyBalanceVec.y, 0)
 
     // Check if is camera based movement
-    if (isModeCameraBased) {
+    if (isModeCameraBased && slopeRayOriginRef.current) {
       modelEuler.y = pivot.rotation.y
       pivot.getWorldDirection(modelFacingVec)
       // Update slopeRayOrigin to new positon
@@ -828,14 +832,13 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
    * Character sleep function
    */
   const sleepCharacter = () => {
-    if (characterRef.current) {
-      if (document.visibilityState === "hidden") {
-        characterRef.current.sleep()
-      } else {
-        setTimeout(() => {
-          characterRef.current.wakeUp()
-        }, wakeUpDelay)
-      }
+    if (!characterRef.current) return
+    if (document.visibilityState === "hidden") {
+      characterRef.current.sleep()
+    } else {
+      setTimeout(() => {
+        if (characterRef.current) characterRef.current.wakeUp()
+      }, wakeUpDelay)
     }
   }
 
@@ -886,8 +889,8 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
 
   useEffect(() => {
     // Initialize directional light
-    if (followLight) {
-      dirLight = characterModelRef.current.parent.parent.children.find(
+    if (followLight && characterModelRef.current) {
+      dirLight = characterModelRef.current.parent?.parent?.children.find(
         (item) => {
           return item.name === "followLight";
         }
@@ -899,14 +902,16 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
    * Keyboard controls subscribe setup
    */
   // If inside keyboardcontrols, active subscribeKeys
-  if (isInsideKeyboardControls) {
+  if (isInsideKeyboardControls && subscribeKeys) {
     useEffect(() => {
+      if (!animated) return
+
       // Action 1 key subscribe for special animation
       const unSubscribeAction1 = subscribeKeys(
         (state) => state.action1,
         (value) => {
           if (value) {
-            animated && action1Animation();
+            action1Animation && action1Animation();
           }
         }
       );
@@ -916,7 +921,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
         (state) => state.action2,
         (value) => {
           if (value) {
-            animated && action2Animation();
+            action2Animation && action2Animation();
           }
         }
       );
@@ -926,7 +931,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
         (state) => state.action3,
         (value) => {
           if (value) {
-            animated && action3Animation();
+            action3Animation && action3Animation();
           }
         }
       );
@@ -936,7 +941,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
         (state) => state.action4,
         (value) => {
           if (value) {
-            animated && action4Animation();
+            action4Animation && action4Animation();
           }
         }
       );
@@ -954,12 +959,14 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
    * Joystick subscribe setup
    */
   useEffect(() => {
+    if (!animated) return
+
     // Subscribe button 2
     const unSubPressButton2 = useJoystickControls.subscribe(
       (state) => state.curButton2Pressed,
       (value) => {
         if (value) {
-          animated && action4Animation();
+          action4Animation && action4Animation();
         }
       }
     )
@@ -969,7 +976,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
       (state) => state.curButton3Pressed,
       (value) => {
         if (value) {
-          animated && action2Animation();
+          action2Animation && action2Animation();
         }
       }
     )
@@ -979,7 +986,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
       (state) => state.curButton4Pressed,
       (value) => {
         if (value) {
-          animated && action3Animation();
+          action3Animation && action3Animation();
         }
       }
     )
@@ -989,7 +996,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
       (state) => state.curButton5Pressed,
       (value) => {
         if (value) {
-          animated && action1Animation();
+          action1Animation && action1Animation();
         }
       }
     )
@@ -1004,7 +1011,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
 
   useEffect(() => {
     // Lock character rotations at Y axis
-    characterRef.current.setEnabledRotations(
+    characterRef.current?.setEnabledRotations(
       autoBalance ? true : false,
       autoBalance ? true : false,
       autoBalance ? true : false,
@@ -1039,20 +1046,20 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
     if (delta > 1) delta %= 1;
 
     // Character current position/velocity
-    if (characterRef.current) {
-      currentPos.copy(characterRef.current.translation() as THREE.Vector3);
-      currentVel.copy(characterRef.current.linvel() as THREE.Vector3);
-      // Assign userDate properties
-      (characterRef.current.userData as userDataType).canJump = canJump;
-      (characterRef.current.userData as userDataType).slopeAngle = slopeAngle;
-      (characterRef.current.userData as userDataType).characterRotated = characterRotated;
-      (characterRef.current.userData as userDataType).isOnMovingObject = isOnMovingObject;
-    }
+    if (!characterRef.current) return
+    currentPos.copy(characterRef.current.translation() as THREE.Vector3);
+    currentVel.copy(characterRef.current.linvel() as THREE.Vector3);
+    // Assign userDate properties
+    (characterRef.current.userData as userDataType).canJump = canJump;
+    (characterRef.current.userData as userDataType).slopeAngle = slopeAngle;
+    (characterRef.current.userData as userDataType).characterRotated = characterRotated;
+    (characterRef.current.userData as userDataType).isOnMovingObject = isOnMovingObject;
+
 
     /**
      * Apply character position to directional light
      */
-    if (followLight && dirLight) {
+    if (followLight && dirLight && characterModelRef.current) {
       dirLight.position.x = currentPos.x + followLightPos.x;
       dirLight.position.y = currentPos.y + followLightPos.y;
       dirLight.position.z = currentPos.z + followLightPos.z;
@@ -1093,6 +1100,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
      */
     if (controllerIndex !== null) {
       const gamepad = navigator.getGamepads()[controllerIndex]
+      if (!gamepad) return
       handleButtons(gamepad.buttons)
       handleSticks(gamepad.axes)
       // Getting moving directions (IIFE)
@@ -1120,7 +1128,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
     /**
      * Getting all the useful keys from useKeyboardControls
      */
-    const { forward, backward, leftward, rightward, jump, run } = isInsideKeyboardControls ? getKeys() : presetKeys;
+    const { forward, backward, leftward, rightward, jump, run } = (isInsideKeyboardControls && getKeys) ? getKeys() : presetKeys;
 
     // Getting moving directions (IIFE)
     modelEuler.y = ((movingDirection) => movingDirection === null ? modelEuler.y : movingDirection)
@@ -1148,7 +1156,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
       );
       // Apply jump force downward to the standing platform
       characterMassForce.y *= jumpForceToGroundMult;
-      rayHit.collider
+      rayHit?.collider
         .parent()
         ?.applyImpulseAtPoint(characterMassForce, standingForcePoint, true);
     }
@@ -1161,7 +1169,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
     );
 
     // If autobalance is off, rotate character model itself
-    if (!autoBalance) {
+    if (!autoBalance && characterModelRef.current) {
       if (isModeCameraBased) {
         characterModelRef.current.quaternion.copy(pivot.quaternion)
       } else {
@@ -1178,13 +1186,16 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
       rayLength,
       false,
       QueryFilterFlags.EXCLUDE_SENSORS,
-      null,
-      null,
+      undefined,
+      undefined,
       characterRef.current,
       // this exclude any collider with userData: excludeEcctrlRay
-      ((collider: Collider) => (
-        collider.parent().userData && !(collider.parent().userData as userDataType).excludeEcctrlRay
-      ))
+      ((collider: Collider) => {
+        const parent = collider.parent();
+        if (!parent) return false;
+        const data = parent.userData as userDataType | undefined;
+        return !data?.excludeEcctrlRay;
+      })
     );
 
     /**Test shape ray */
@@ -1219,24 +1230,20 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
           rayOrigin.y - rayHit.timeOfImpact,
           rayOrigin.z
         );
-        const rayHitObjectBodyType = rayHit.collider.parent().bodyType();
-        const rayHitObjectBodyMass = rayHit.collider.parent().mass();
-        massRatio = characterRef.current.mass() / rayHitObjectBodyMass;
+        const rayHitObjectBodyType = rayHit.collider.parent()?.bodyType();
+        const rayHitObjectBodyMass = rayHit.collider.parent()?.mass();
+        if (rayHitObjectBodyMass) massRatio = characterRef.current.mass() / rayHitObjectBodyMass;
         // Body type 0 is rigid body, body type 1 is fixed body, body type 2 is kinematic body
         if (rayHitObjectBodyType === 0 || rayHitObjectBodyType === 2) {
           isOnMovingObject = true;
           // Calculate distance between character and moving object
           distanceFromCharacterToObject
             .copy(currentPos)
-            .sub(rayHit.collider.parent().translation() as THREE.Vector3);
+            .sub(rayHit.collider.parent()?.translation() as THREE.Vector3);
           // Moving object linear velocity
-          const movingObjectLinvel = rayHit.collider
-            .parent()
-            .linvel() as THREE.Vector3;
+          const movingObjectLinvel = rayHit.collider.parent()?.linvel() as THREE.Vector3;
           // Moving object angular velocity
-          const movingObjectAngvel = rayHit.collider
-            .parent()
-            .angvel() as THREE.Vector3;
+          const movingObjectAngvel = rayHit.collider.parent()?.angvel() as THREE.Vector3;
           // Combine object linear velocity and angular velocity to movingObjectVelocity
           movingObjectVelocity.set(
             movingObjectLinvel.x +
@@ -1275,13 +1282,11 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
                 .multiplyScalar(Math.min(1, 1 / massRatio)) // Scale up/down base on different masses ratio
                 .negate();
             }
-            rayHit.collider
-              .parent()
-              .applyImpulseAtPoint(
-                movingObjectDragForce,
-                standingForcePoint,
-                true
-              );
+            rayHit.collider.parent()?.applyImpulseAtPoint(
+              movingObjectDragForce,
+              standingForcePoint,
+              true
+            );
           }
         } else { // on fixed body
           massRatio = 1;
@@ -1300,20 +1305,23 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
     /**
      * Slope ray casting detect if on slope
      */
-    slopeRayOriginRef.current.getWorldPosition(slopeRayorigin);
+    slopeRayOriginRef.current?.getWorldPosition(slopeRayorigin);
     slopeRayorigin.y = rayOrigin.y;
     slopeRayHit = world.castRay(
       slopeRayCast,
       slopeRayLength,
       false,
       QueryFilterFlags.EXCLUDE_SENSORS,
-      null,
-      null,
+      undefined,
+      undefined,
       characterRef.current,
       // this exclude any collider with userData: excludeEcctrlRay
-      ((collider: Collider) => (
-        collider.parent().userData && !(collider.parent().userData as userDataType).excludeEcctrlRay
-      ))
+      ((collider: Collider) => {
+        const parent = collider.parent();
+        if (!parent) return false;
+        const data = parent.userData as userDataType | undefined;
+        return !data?.excludeEcctrlRay;
+      })
     );
 
     // Calculate slope angle
@@ -1322,7 +1330,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
         slopeRayCast,
         slopeRayLength,
         false
-      )?.normal;
+      )?.normal ?? null;
       if (actualSlopeNormal) {
         actualSlopeNormalVec?.set(
           actualSlopeNormal.x,
@@ -1341,10 +1349,10 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
           ).toFixed(2)
         );
       } else {
-        slopeAngle = null;
+        slopeAngle = 0;
       }
     } else {
-      slopeAngle = null;
+      slopeAngle = 0;
     }
 
     /**
@@ -1467,9 +1475,9 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
         !gamepadKeys.forward && !gamepadKeys.backward && !gamepadKeys.leftward && !gamepadKeys.rightward &&
         canJump
       ) {
-        idleAnimation();
+        idleAnimation && idleAnimation();
       } else if ((jump || button1Pressed) && canJump) {
-        jumpAnimation();
+        jumpAnimation && jumpAnimation();
       } else if (canJump &&
         (
           forward || backward || leftward || rightward ||
@@ -1477,13 +1485,13 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
           isPointMoving ||
           gamepadKeys.forward || gamepadKeys.backward || gamepadKeys.leftward || gamepadKeys.rightward
         )) {
-        (run || runState) ? runAnimation() : walkAnimation();
+        (run || runState) ? runAnimation && runAnimation() : walkAnimation && walkAnimation();
       } else if (!canJump) {
-        jumpIdleAnimation();
+        jumpIdleAnimation && jumpIdleAnimation();
       }
       // On high sky, play falling animation
       if (rayHit == null && isFalling) {
-        fallAnimation();
+        fallAnimation && fallAnimation();
       }
     }
   });
@@ -1554,8 +1562,8 @@ export interface EcctrlProps extends RigidBodyProps {
   followLight?: boolean;
   disableControl?: boolean;
   disableFollowCam?: boolean;
-  disableFollowCamPos?: { x: number, y: number, z: number };
-  disableFollowCamTarget?: { x: number, y: number, z: number };
+  disableFollowCamPos?: { x: number, y: number, z: number } | null;
+  disableFollowCamTarget?: { x: number, y: number, z: number } | null;
   // Follow camera setups
   camInitDis?: number;
   camMaxDis?: number;
@@ -1622,7 +1630,7 @@ export interface EcctrlProps extends RigidBodyProps {
   // Animation temporary setups
   animated?: boolean;
   // Mode setups
-  mode?: string;
+  mode?: string | null;
   // Controller setups
   controllerKeys?: { forward?: number, backward?: number, leftward?: number, rightward?: number, jump?: number, action1?: number, action2?: number, action3?: number, action4?: number }
   // Point-to-move setups

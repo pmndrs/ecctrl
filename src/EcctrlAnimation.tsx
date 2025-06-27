@@ -6,7 +6,7 @@ import React from "react";
 
 export function EcctrlAnimation(props: EcctrlAnimationProps) {
   // Change the character src to yours
-  const group = useRef();
+  const group = useRef<THREE.Group | null>(null);
   const { animations } = useGLTF(props.characterURL);
   const { actions } = useAnimations(animations, group);
 
@@ -26,10 +26,13 @@ export function EcctrlAnimation(props: EcctrlAnimationProps) {
 
   useEffect(() => {
     // Play animation
-    const action =
-      actions[curAnimation ? curAnimation : props.animationSet.jumpIdle];
+    // const action = actions[curAnimation ? curAnimation : props.animationSet.jumpIdle];
+    const key = curAnimation ?? props.animationSet.jumpIdle;
+    const action = key ? actions[key] : null;
 
     // For jump and jump land animation, only play once and clamp when finish
+    if (action === null) return
+
     if (
       curAnimation === props.animationSet.jump ||
       curAnimation === props.animationSet.jumpLand ||
@@ -38,11 +41,7 @@ export function EcctrlAnimation(props: EcctrlAnimationProps) {
       curAnimation === props.animationSet.action3 ||
       curAnimation === props.animationSet.action4
     ) {
-      action
-        .reset()
-        .fadeIn(0.2)
-        .setLoop(THREE.LoopOnce, undefined as number)
-        .play();
+      action.reset().fadeIn(0.2).setLoop(THREE.LoopOnce, 0).play();
       action.clampWhenFinished = true;
     } else {
       action.reset().fadeIn(0.2).play();

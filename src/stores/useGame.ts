@@ -8,13 +8,13 @@ export const useGame = /* @__PURE__ */ create(
       /**
        * Point to move point
        */
-      moveToPoint: null as THREE.Vector3,
+      moveToPoint: null as THREE.Vector3 | null,
 
       /**
        * Character animations state manegement
        */
       // Initial animation
-      curAnimation: null as string,
+      curAnimation: null as string | null,
       animationSet: {} as AnimationSet,
 
       initializeAnimationSet: (animationSet: AnimationSet) => {
@@ -148,7 +148,7 @@ export const useGame = /* @__PURE__ */ create(
       /**
        * Set/get point to move point
        */
-      setMoveToPoint: (point: THREE.Vector3) => {
+      setMoveToPoint: (point: THREE.Vector3 | null) => {
         set(() => {
           return { moveToPoint: point };
         });
@@ -179,15 +179,15 @@ export type AnimationSet = {
 };
 
 type State = {
-  moveToPoint: THREE.Vector3;
-  curAnimation: string;
+  moveToPoint: THREE.Vector3 | null;
+  curAnimation: string | null;
   animationSet: AnimationSet;
   initializeAnimationSet: (animationSet: AnimationSet) => void;
   reset: () => void;
-  setMoveToPoint: (point: THREE.Vector3) => void;
+  setMoveToPoint: (point: THREE.Vector3 | null) => void;
   getMoveToPoint: () => {
-    moveToPoint: THREE.Vector3;
-  }
+    moveToPoint: THREE.Vector3 | null;
+  };
 } & {
   [key in keyof AnimationSet]: () => void;
 };

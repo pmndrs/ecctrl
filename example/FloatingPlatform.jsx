@@ -7,14 +7,13 @@ import { useEffect, useRef, useMemo } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
-import type { RayColliderHit } from "@dimforge/rapier3d-compat";
 
 export default function FloatingPlatform() {
   // Preset
   // couldn't find the correct type
-  const floatingPlateRef = useRef<any>();
-  const floatingPlateRef2 = useRef<any>();
-  const floatingMovingPlateRef = useRef<any>();
+  const floatingPlateRef = useRef();
+  const floatingPlateRef2 = useRef();
+  const floatingMovingPlateRef = useRef();
   const { rapier, world } = useRapier();
 
   /**
@@ -26,7 +25,7 @@ export default function FloatingPlatform() {
   const springDirVec = useMemo(() => new THREE.Vector3(), []);
   const origin = useMemo(() => new THREE.Vector3(), []);
   const rayCast = new rapier.Ray(origin, rayDir);
-  let rayHit: RayColliderHit | null = null;
+  let rayHit = null;
   const floatingDis = 0.8;
   const springK = 2.5;
   const dampingC = 0.15;
@@ -34,14 +33,14 @@ export default function FloatingPlatform() {
   const springDirVec2 = useMemo(() => new THREE.Vector3(), []);
   const origin2 = useMemo(() => new THREE.Vector3(), []);
   const rayCast2 = new rapier.Ray(origin2, rayDir);
-  let rayHit2: RayColliderHit | null = null;
+  let rayHit2 = null;
   // Moving Platform
   const springDirVecMove = useMemo(() => new THREE.Vector3(), []);
   const originMove = useMemo(() => new THREE.Vector3(), []);
   const rayCastMove = new rapier.Ray(originMove, rayDir);
   const movingVel = useMemo(() => new THREE.Vector3(), []);
   let movingDir = 1;
-  let rayHitMove: RayColliderHit | null = null;
+  let rayHitMove = null;
 
   useEffect(() => {
     // Loack platform 1 rotation
