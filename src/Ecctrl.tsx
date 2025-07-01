@@ -198,11 +198,12 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody | null, EcctrlProps
   let floatingRayDebug = null;
   let slopeRayDebug = null;
   let autoBalanceForceDebug = null;
-  if (debug) {
-    // Character Controls
-    characterControlsDebug = useControls(
-      "Character Controls",
-      {
+
+  // Character controls debug
+  characterControlsDebug = useControls(
+    "Character Controls",
+    debug
+      ? {
         maxVelLimit: {
           value: maxVelLimit,
           min: 0,
@@ -287,29 +288,32 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody | null, EcctrlProps
           max: 15,
           step: 0.1,
         },
-      },
-      { collapsed: true }
-    );
-    // Apply debug values
-    maxVelLimit = characterControlsDebug.maxVelLimit;
-    turnVelMultiplier = characterControlsDebug.turnVelMultiplier;
-    turnSpeed = characterControlsDebug.turnSpeed;
-    sprintMult = characterControlsDebug.sprintMult;
-    jumpVel = characterControlsDebug.jumpVel;
-    jumpForceToGroundMult = characterControlsDebug.jumpForceToGroundMult;
-    slopJumpMult = characterControlsDebug.slopJumpMult;
-    sprintJumpMult = characterControlsDebug.sprintJumpMult;
-    airDragMultiplier = characterControlsDebug.airDragMultiplier;
-    dragDampingC = characterControlsDebug.dragDampingC;
-    accDeltaTime = characterControlsDebug.accDeltaTime;
-    rejectVelMult = characterControlsDebug.rejectVelMult;
-    moveImpulsePointY = characterControlsDebug.moveImpulsePointY;
-    camFollowMult = characterControlsDebug.camFollowMult;
+      }
+      : {},
+    { collapsed: true }
+  ) as Partial<CharacterControlsSchema>;
+  if (debug) {
+    maxVelLimit = characterControlsDebug.maxVelLimit ?? maxVelLimit;
+    turnVelMultiplier = characterControlsDebug.turnVelMultiplier ?? turnVelMultiplier;
+    turnSpeed = characterControlsDebug.turnSpeed ?? turnSpeed;
+    sprintMult = characterControlsDebug.sprintMult ?? sprintMult;
+    jumpVel = characterControlsDebug.jumpVel ?? jumpVel;
+    jumpForceToGroundMult = characterControlsDebug.jumpForceToGroundMult ?? jumpForceToGroundMult;
+    slopJumpMult = characterControlsDebug.slopJumpMult ?? slopJumpMult;
+    sprintJumpMult = characterControlsDebug.sprintJumpMult ?? sprintJumpMult;
+    airDragMultiplier = characterControlsDebug.airDragMultiplier ?? airDragMultiplier;
+    dragDampingC = characterControlsDebug.dragDampingC ?? dragDampingC;
+    accDeltaTime = characterControlsDebug.accDeltaTime ?? accDeltaTime;
+    rejectVelMult = characterControlsDebug.rejectVelMult ?? rejectVelMult;
+    moveImpulsePointY = characterControlsDebug.moveImpulsePointY ?? moveImpulsePointY;
+    camFollowMult = characterControlsDebug.camFollowMult ?? camFollowMult;
+  }
 
-    // Floating Ray
-    floatingRayDebug = useControls(
-      "Floating Ray",
-      {
+  // Floating ray debug
+  floatingRayDebug = useControls(
+    "Floating Ray",
+    debug
+      ? {
         rayOriginOffest: {
           x: 0,
           y: -capsuleHalfHeight,
@@ -346,22 +350,25 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody | null, EcctrlProps
           max: 3,
           step: 0.01,
         },
-      },
-      { collapsed: true }
-    );
-    // Apply debug values
-    rayOriginOffest = floatingRayDebug.rayOriginOffest;
-    rayHitForgiveness = floatingRayDebug.rayHitForgiveness;
-    rayLength = floatingRayDebug.rayLength;
-    rayDir = floatingRayDebug.rayDir;
-    floatingDis = floatingRayDebug.floatingDis;
-    springK = floatingRayDebug.springK;
-    dampingC = floatingRayDebug.dampingC;
+      }
+      : {},
+    { collapsed: true }
+  ) as Partial<FloatingRaySchema>;
+  if (debug) {
+    rayOriginOffest = floatingRayDebug.rayOriginOffest ?? rayOriginOffest;
+    rayHitForgiveness = floatingRayDebug.rayHitForgiveness ?? rayHitForgiveness;
+    rayLength = floatingRayDebug.rayLength ?? rayLength;
+    rayDir = floatingRayDebug.rayDir ?? rayDir;
+    floatingDis = floatingRayDebug.floatingDis ?? floatingDis;
+    springK = floatingRayDebug.springK ?? springK;
+    dampingC = floatingRayDebug.dampingC ?? dampingC;
+  }
 
-    // Slope Ray
-    slopeRayDebug = useControls(
-      "Slope Ray",
-      {
+  // Slope ray debug
+  slopeRayDebug = useControls(
+    "Slope Ray",
+    debug
+      ? {
         showSlopeRayOrigin: false,
         slopeMaxAngle: {
           value: slopeMaxAngle,
@@ -394,21 +401,25 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody | null, EcctrlProps
           max: 5,
           step: 0.01,
         },
-      },
-      { collapsed: true }
-    );
-    // Apply debug values
-    showSlopeRayOrigin = slopeRayDebug.showSlopeRayOrigin;
-    slopeMaxAngle = slopeRayDebug.slopeMaxAngle;
-    slopeRayLength = slopeRayDebug.slopeRayLength;
-    slopeRayDir = slopeRayDebug.slopeRayDir;
-    slopeUpExtraForce = slopeRayDebug.slopeUpExtraForce;
-    slopeDownExtraForce = slopeRayDebug.slopeDownExtraForce;
+      }
+      : {},
+    { collapsed: true }
+  ) as Partial<SlopeRaySchema>;
+  if (debug) {
+    showSlopeRayOrigin = slopeRayDebug.showSlopeRayOrigin ?? showSlopeRayOrigin;
+    slopeMaxAngle = slopeRayDebug.slopeMaxAngle ?? slopeMaxAngle;
+    slopeRayOriginOffest = slopeRayDebug.slopeRayOriginOffest ?? slopeRayOriginOffest;
+    slopeRayLength = slopeRayDebug.slopeRayLength ?? slopeRayLength;
+    slopeRayDir = slopeRayDebug.slopeRayDir ?? slopeRayDir;
+    slopeUpExtraForce = slopeRayDebug.slopeUpExtraForce ?? slopeUpExtraForce;
+    slopeDownExtraForce = slopeRayDebug.slopeDownExtraForce ?? slopeDownExtraForce;
+  }
 
-    // AutoBalance Force
-    autoBalanceForceDebug = useControls(
-      "AutoBalance Force",
-      {
+  // Auto balance force debug
+  autoBalanceForceDebug = useControls(
+    "AutoBalance Force",
+    debug
+      ? {
         autoBalance: {
           value: true,
         },
@@ -436,15 +447,16 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody | null, EcctrlProps
           max: 0.1,
           step: 0.001,
         },
-      },
-      { collapsed: true }
-    );
-    // Apply debug values
-    autoBalance = autoBalanceForceDebug.autoBalance;
-    autoBalanceSpringK = autoBalanceForceDebug.autoBalanceSpringK;
-    autoBalanceDampingC = autoBalanceForceDebug.autoBalanceDampingC;
-    autoBalanceSpringOnY = autoBalanceForceDebug.autoBalanceSpringOnY;
-    autoBalanceDampingOnY = autoBalanceForceDebug.autoBalanceDampingOnY;
+      }
+      : {},
+    { collapsed: true }
+  ) as Partial<AutoBalanceForceSchema>;
+  if (debug) {
+    autoBalance = autoBalanceForceDebug.autoBalance ?? autoBalance;
+    autoBalanceSpringK = autoBalanceForceDebug.autoBalanceSpringK ?? autoBalanceSpringK;
+    autoBalanceDampingC = autoBalanceForceDebug.autoBalanceDampingC ?? autoBalanceDampingC;
+    autoBalanceSpringOnY = autoBalanceForceDebug.autoBalanceSpringOnY ?? autoBalanceSpringOnY;
+    autoBalanceDampingOnY = autoBalanceForceDebug.autoBalanceDampingOnY ?? autoBalanceDampingOnY;
   }
 
   /**
@@ -1544,6 +1556,51 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody | null, EcctrlProps
 }
 
 export default forwardRef(Ecctrl);
+
+type CharacterControlsSchema = {
+  maxVelLimit: number;
+  turnVelMultiplier: number;
+  turnSpeed: number;
+  sprintMult: number;
+  jumpVel: number;
+  jumpForceToGroundMult: number;
+  slopJumpMult: number;
+  sprintJumpMult: number;
+  airDragMultiplier: number;
+  dragDampingC: number;
+  accDeltaTime: number;
+  rejectVelMult: number;
+  moveImpulsePointY: number;
+  camFollowMult: number;
+};
+
+type FloatingRaySchema = {
+  rayOriginOffest: { x: number, y: number, z: number };
+  rayHitForgiveness: number;
+  rayLength: number;
+  rayDir: { x: number, y: number, z: number };
+  floatingDis: number;
+  springK: number;
+  dampingC: number;
+};
+
+type SlopeRaySchema = {
+  showSlopeRayOrigin: boolean;
+  slopeMaxAngle: number;
+  slopeRayOriginOffest: number;
+  slopeRayLength: number;
+  slopeRayDir: { x: number, y: number, z: number };
+  slopeUpExtraForce: number;
+  slopeDownExtraForce: number;
+};
+
+type AutoBalanceForceSchema = {
+  autoBalance: boolean;
+  autoBalanceSpringK: number;
+  autoBalanceDampingC: number;
+  autoBalanceSpringOnY: number;
+  autoBalanceDampingOnY: number;
+};
 
 export type camListenerTargetType = "document" | "domElement";
 
