@@ -48,7 +48,7 @@ const getMovingDirection = (forward: boolean,
   return null;
 };
 
-const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody | null, EcctrlProps> = ({
+const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
   children,
   debug = false,
   capsuleHalfHeight = 0.35,
@@ -130,19 +130,17 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody | null, EcctrlProps
   // Other rigibody props from parent
   ...props
 }: EcctrlProps, ref) => {
-  const characterRef = useRef<CustomEcctrlRigidBody | null>(null)
-  // const characterRef = ref as RefObject<RapierRigidBody> || useRef<RapierRigidBody>()
+  const characterRef = useRef<RapierRigidBody | null>(null);
   const characterModelRef = useRef<THREE.Group | null>(null);
   const characterModelIndicator: THREE.Object3D = useMemo(() => new THREE.Object3D(), [])
   const defaultControllerKeys = { forward: 12, backward: 13, leftward: 14, rightward: 15, jump: 2, action1: 11, action2: 3, action3: 1, action4: 0 }
-  useImperativeHandle<CustomEcctrlRigidBody | null, CustomEcctrlRigidBody | null>(ref, () => {
-    if (characterRef.current) {
-      characterRef.current.rotateCamera = rotateCamera;
-      characterRef.current.rotateCharacterOnY = rotateCharacterOnY;
-      return characterRef.current!;
-    }
-    return null;
-  }, [characterRef.current]);
+  useImperativeHandle<CustomEcctrlRigidBody | null, CustomEcctrlRigidBody | null>(ref, () => ({
+    get group() {
+      return characterRef.current;
+    },
+    rotateCamera,
+    rotateCharacterOnY,
+  }), []);
 
   /**
    * Mode setup
@@ -1604,9 +1602,10 @@ type AutoBalanceForceSchema = {
 
 export type camListenerTargetType = "document" | "domElement";
 
-export interface CustomEcctrlRigidBody extends RapierRigidBody {
-  rotateCamera?: (x: number, y: number) => void;
-  rotateCharacterOnY?: (rad: number) => void;
+export interface CustomEcctrlRigidBody {
+  group: RapierRigidBody | null;
+  rotateCamera: (x: number, y: number) => void;
+  rotateCharacterOnY: (rad: number) => void;
 }
 
 export interface EcctrlProps extends RigidBodyProps {
