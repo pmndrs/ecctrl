@@ -419,7 +419,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
     debug
       ? {
         autoBalance: {
-          value: true,
+          value: autoBalance ?? true,
         },
         autoBalanceSpringK: {
           value: autoBalanceSpringK,
