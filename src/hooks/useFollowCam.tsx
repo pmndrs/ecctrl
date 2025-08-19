@@ -16,6 +16,8 @@ export const useFollowCam = function ({
   camInitDir = { x: 0, y: 0 }, // in rad
   camMoveSpeed = 1,
   camZoomSpeed = 1,
+  camInvertX = false,
+  camInvertY = false,
   camCollisionOffset = 0.7, // percentage
   camCollisionSpeedMult = 4,
   camListenerTarget = "domElement",
@@ -23,6 +25,14 @@ export const useFollowCam = function ({
 }: UseFollowCamProps = {}) {
   const { scene, camera, gl } = useThree();
   // const { rapier, world } = useRapier();
+
+  const camInvertXRef = useRef(camInvertX ? -1 : 1);
+  const camInvertYRef = useRef(camInvertY ? -1 : 1);
+
+  useEffect(() => {
+    camInvertXRef.current = camInvertX ? -1 : 1;
+    camInvertYRef.current = camInvertY ? -1 : 1;
+}, [camInvertX, camInvertY]);
 
   let isMouseDown = false;
   let previousTouch1: Touch | null = null;
@@ -64,8 +74,8 @@ export const useFollowCam = function ({
   // Mouse move event
   const onDocumentMouseMove = (e: MouseEvent) => {
     if (document.pointerLockElement || isMouseDown) {
-      pivot.rotation.y -= e.movementX * 0.002 * camMoveSpeed;
-      const vy = followCam.rotation.x + e.movementY * 0.002 * camMoveSpeed;
+      pivot.rotation.y -= e.movementX * 0.002 * camMoveSpeed * camInvertXRef.current;
+      const vy = followCam.rotation.x + (e.movementY * camInvertYRef.current) * 0.002 * camMoveSpeed;
 
       cameraDistance = followCam.position.length();
 
@@ -114,8 +124,8 @@ export const useFollowCam = function ({
       const touch1MovementX = touch1.pageX - previousTouch1.pageX;
       const touch1MovementY = touch1.pageY - previousTouch1.pageY;
 
-      pivot.rotation.y -= touch1MovementX * 0.005 * camMoveSpeed;
-      const vy = followCam.rotation.x + touch1MovementY * 0.005 * camMoveSpeed;
+      pivot.rotation.y -= touch1MovementX * 0.005 * camMoveSpeed * camInvertXRef.current;
+      const vy = followCam.rotation.x + (touch1MovementY * camInvertYRef.current) * 0.005 * camMoveSpeed;
 
       cameraDistance = followCam.position.length();
 
@@ -155,8 +165,8 @@ export const useFollowCam = function ({
    * Gamepad second joystick event
    */
   const joystickCamMove = (movementX: number, movementY: number) => {
-    pivot.rotation.y -= movementX * 0.005 * camMoveSpeed * 5;
-    const vy = followCam.rotation.x + movementY * 0.005 * camMoveSpeed * 5;
+    pivot.rotation.y -= movementX * 0.005 * camMoveSpeed * 5 * camInvertXRef.current;
+    const vy = followCam.rotation.x + (movementY * camInvertYRef.current) * 0.005 * camMoveSpeed * 5;
 
     cameraDistance = followCam.position.length();
 
@@ -324,6 +334,8 @@ export type UseFollowCamProps = {
   camInitDir?: { x: number, y: number };
   camMoveSpeed?: number;
   camZoomSpeed?: number;
+  camInvertX?: boolean,
+  camInvertY?: boolean,
   camCollisionOffset?: number;
   camCollisionSpeedMult?: number;
   camListenerTarget?: camListenerTargetType;
