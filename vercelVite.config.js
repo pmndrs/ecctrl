@@ -1,9 +1,10 @@
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 const isCodeSandbox =
   "SANDBOX_URL" in process.env || "CODESANDBOX_HOST" in process.env;
 
-export default {
+export default defineConfig({
   plugins: [react()],
   root: "example/",
   publicDir: "../public/",
@@ -17,4 +18,4 @@ export default {
     emptyOutDir: true,
     sourcemap: true,
   },
-};
+});

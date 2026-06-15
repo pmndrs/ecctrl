@@ -1,19 +1,22 @@
 {
   "compilerOptions": {
     "outDir": "dist",
+    "rootDir": "src",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipDefaultLibCheck": true,
     "skipLibCheck": true,
     "target": "ESNext",
+    "module": "ESNext",
     "verbatimModuleSyntax": true,
     "strict": true,
     "emitDeclarationOnly": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "strictNullChecks": true,
     "jsx": "react",
     "declaration": true,
     "lib": ["es2022", "dom"]
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "example"]
 }

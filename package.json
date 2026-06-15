@@ -1,63 +1,149 @@
 {
   "name": "ecctrl",
-  "version": "1.0.97",
+  "version": "2.0.0",
   "author": "Erdong Chen",
   "license": "MIT",
-  "description": "A floating rigibody character controller for R3F",
+  "description": "A physics-driven character, vehicle, and custom-gravity controller toolkit for React Three Fiber and Rapier.",
   "keywords": [
     "react",
     "three",
     "threejs",
     "react-three-fiber",
-    "control",
-    "character-control"
+    "r3f",
+    "rapier",
+    "react-three-rapier",
+    "physics",
+    "character-controller",
+    "vehicle-controller",
+    "custom-gravity",
+    "drone-controller",
+    "game-development",
+    "webgl",
+    "ecctrl"
   ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pmndrs/ecctrl.git"
   },
+  "homepage": "https://github.com/pmndrs/ecctrl",
+  "bugs": {
+    "url": "https://github.com/pmndrs/ecctrl/issues"
+  },
   "files": [
-    "dist/*",
-    "src/*"
+    "dist",
+    "LICENSE",
+    "NOTICE"
   ],
   "type": "module",
-  "types": "./dist/Ecctrl.d.ts",
-  "main": "./dist/Ecctrl.cjs",
-  "module": "./dist/Ecctrl.js",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "exports": {
-    "types": "./dist/Ecctrl.d.ts",
-    "require": "./dist/Ecctrl.cjs",
-    "import": "./dist/Ecctrl.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.js"
+    },
+    "./vehicle": {
+      "types": "./dist/vehicle.d.ts",
+      "require": "./dist/vehicle.cjs",
+      "import": "./dist/vehicle.js"
+    },
+    "./input": {
+      "types": "./dist/input.d.ts",
+      "require": "./dist/input.cjs",
+      "import": "./dist/input.js"
+    },
+    "./animation": {
+      "types": "./dist/animation.d.ts",
+      "require": "./dist/animation.cjs",
+      "import": "./dist/animation.js"
+    },
+    "./gravity": {
+      "types": "./dist/gravity.d.ts",
+      "require": "./dist/gravity.cjs",
+      "import": "./dist/gravity.js"
+    },
+    "./camera": {
+      "types": "./dist/camera.d.ts",
+      "require": "./dist/camera.cjs",
+      "import": "./dist/camera.js"
+    },
+    "./time": {
+      "types": "./dist/time.d.ts",
+      "require": "./dist/time.cjs",
+      "import": "./dist/time.js"
+    },
+    "./curves": {
+      "types": "./dist/curves.d.ts",
+      "require": "./dist/curves.cjs",
+      "import": "./dist/curves.js"
+    },
+    "./leva": {
+      "types": "./dist/leva.d.ts",
+      "require": "./dist/leva.cjs",
+      "import": "./dist/leva.js"
+    },
+    "./utils": {
+      "types": "./dist/utils.d.ts",
+      "require": "./dist/utils.cjs",
+      "import": "./dist/utils.js"
+    },
+    "./all": {
+      "types": "./dist/all.d.ts",
+      "require": "./dist/all.cjs",
+      "import": "./dist/all.js"
+    },
+    "./package.json": "./package.json"
   },
   "sideEffects": false,
-  "devDependencies": {
-    "@react-three/drei": "^10.3.0",
-    "@react-three/fiber": "^9.1.2",
-    "@types/react": "^19.1.6",
-    "@types/react-dom": "^19.1.6",
-    "@vitejs/plugin-react": "^4.6.0",
-    "r3f-perf": "^7.2.3",
-    "typescript": "^5.8.3",
-    "vite": "^7.0.0"
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
-    "@react-spring/three": "^10.0.1",
-    "@types/three": "^0.177.0",
-    "leva": "^0.10.0",
-    "three": ">=0.177.0",
-    "zustand": "^5.0.1"
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@dimforge/rapier3d-compat": "^0.19.2",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
+    "@react-three/rapier": "^2.2.0",
+    "@types/react": "^19.2.16",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
+    "@vitejs/plugin-react": "^6.0.2",
+    "leva": "^0.10.1",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "three": "^0.184.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16"
   },
   "peerDependencies": {
-    "@react-three/drei": ">=9.0",
-    "@react-three/fiber": ">=9.0",
-    "@react-three/rapier": ">=2.0.0",
-    "react": ">=19.1.0",
-    "react-dom": ">=19.1.0",
-    "three": ">=0.177.0"
+    "@react-three/drei": ">=10.7",
+    "@react-three/fiber": ">=9.4",
+    "@react-three/rapier": ">=2.2.0",
+    "leva": ">=0.10.1",
+    "react": ">=19.2.7",
+    "react-dom": ">=19.2.7",
+    "three": ">=0.184.0"
+  },
+  "peerDependenciesMeta": {
+    "@react-three/drei": {
+      "optional": true
+    },
+    "leva": {
+      "optional": true
+    }
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && tsc",
-    "preview": "vite preview"
+    "build": "npm run build:lib",
+    "build:lib": "vite build && tsc",
+    "build:example": "vite build -c vercelVite.config.js",
+    "preview": "vite preview -c vercelVite.config.js",
+    "typecheck": "tsc --noEmit --pretty false",
+    "pack:dry": "npm pack --dry-run",
+    "prepack": "npm run build:lib"
   }
 }
