@@ -19,7 +19,14 @@ export const useButtonStore = /* @__PURE__ */ create(
   /* @__PURE__ */ subscribeWithSelector<ButtonStoreState>((set) => ({
     buttons: {},
     setButtonActive: (id, active) =>
-      set((state) => ({ buttons: { ...state.buttons, [id]: active } })),
-    resetAllButtons: () => set(() => ({ buttons: {} })),
+      set((state) =>
+        Boolean(state.buttons[id]) === active
+          ? state
+          : { buttons: { ...state.buttons, [id]: active } }
+      ),
+    resetAllButtons: () =>
+      set((state) =>
+        Object.keys(state.buttons).length === 0 ? state : { buttons: {} }
+      ),
   }))
 );

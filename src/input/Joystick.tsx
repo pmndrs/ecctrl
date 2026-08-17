@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import React, { useState, useRef, useCallback, useEffect } from "react"
+import React, { useRef, useCallback, useEffect } from "react"
 import { useJoystickStore } from "./stores/useJoystickStore";
 
 // Default styles for the joystick wrapper (interactive area)
@@ -63,11 +63,13 @@ const Joystick = (props: JoystickProps) => {
     // Refs for the joystick base and knob elements
     const baseRef = useRef<HTMLDivElement>(null);
     const knobRef = useRef<HTMLDivElement>(null);
+    const activePointerIdRef = useRef<number | null>(null);
+    const centerRef = useRef<{ x: number; y: number } | null>(null);
+    const releaseTransitionRef = useRef("");
 
-    // State to track if the joystick is active
-    const [active, setActive] = useState(false);
     // Zustand store hooks for joystick state management
-    const { setJoystick, resetJoystick } = useJoystickStore()
+    const setJoystick = useJoystickStore((state) => state.setJoystick)
+    const resetJoystick = useJoystickStore((state) => state.resetJoystick)
 
     // Styles for the joystick wrapper
     const joystickWrapperStyle: React.CSSProperties = {
@@ -90,16 +92,11 @@ const Joystick = (props: JoystickProps) => {
      */
     const moveFunction = useCallback((x: number, y: number) => {
         // Check if refs are available
-        if (!knobRef.current || !baseRef.current) return;
+        if (!knobRef.current || !centerRef.current) return;
 
-        // Get the bounding rectangle of the joystick base
-        const rect = baseRef.current.getBoundingClientRect();
-        // Calculate the center of the joystick base
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
         // Calculate the difference from the center
-        let dx = x - centerX;
-        let dy = y - centerY;
+        let dx = x - centerRef.current.x;
+        let dy = y - centerRef.current.y;
         const distance = Math.hypot(dx, dy);
         // If the distance exceeds the maximum radius, scale down the movement
         if (distance > joystickMaxRadius) {
@@ -116,9 +113,15 @@ const Joystick = (props: JoystickProps) => {
     /**
      * Function to reset the joystick state
      */
-    const resetFunction = useCallback(() => {
-        setActive(false);
-        if (knobRef.current) knobRef.current.style.transform = 'translate(-50%, -50%)';
+    const resetFunction = useCallback((pointerId: number) => {
+        if (activePointerIdRef.current !== pointerId) return;
+
+        activePointerIdRef.current = null;
+        centerRef.current = null;
+        if (knobRef.current) {
+            knobRef.current.style.transition = releaseTransitionRef.current;
+            knobRef.current.style.transform = 'translate(-50%, -50%)';
+        }
         resetJoystick(props.id)
     }, [resetJoystick, props.id])
 
@@ -133,12 +136,30 @@ const Joystick = (props: JoystickProps) => {
             onPointerDown={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+
+                if (activePointerIdRef.current !== null) return;
+
+                const rect = baseRef.current?.getBoundingClientRect();
+                if (!rect || !knobRef.current) return;
+
+                activePointerIdRef.current = e.pointerId;
+                centerRef.current = {
+                    x: rect.left + rect.width / 2,
+                    y: rect.top + rect.height / 2,
+                };
+                releaseTransitionRef.current = knobRef.current.style.transition;
+                knobRef.current.style.transition = "none";
+                e.currentTarget.setPointerCapture(e.pointerId);
                 moveFunction(e.clientX, e.clientY)
-                setActive(true)
             }}
-            onPointerMove={(e) => active && moveFunction(e.clientX, e.clientY)}
-            onPointerUp={resetFunction}
-            onPointerLeave={resetFunction}
+            onPointerMove={(e) => {
+                if (activePointerIdRef.current === e.pointerId) {
+                    moveFunction(e.clientX, e.clientY)
+                }
+            }}
+            onPointerUp={(e) => resetFunction(e.pointerId)}
+            onPointerCancel={(e) => resetFunction(e.pointerId)}
+            onLostPointerCapture={(e) => resetFunction(e.pointerId)}
         >
             <div id="joystick-base" style={joystickBaseStyle} ref={baseRef} >
                 <div id="joystick-knob" style={joystickKnobStyle} ref={knobRef} />

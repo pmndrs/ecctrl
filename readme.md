@@ -19,6 +19,7 @@ Ecctrl is a modular controller toolkit for custom-gravity worlds, ShapeCast char
 This is the best way to test the character controller, custom gravity, cars, drones, touch controls, time control, and tuning tools before adding Ecctrl to your project.
 
 - Full docs: [API and configuration guide](https://github.com/pmndrs/ecctrl/blob/main/docs/api-reference.md)
+- Changelog: [Release history and upcoming changes](./CHANGELOG.md)
 - Discord: [Ecctrl discussion channel](https://discord.gg/xyUkPmaV6)
 - Related project: [BVHEcctrl](https://github.com/pmndrs/BVHEcctrl), [BVHEcctrl demo](https://bvhecctrl.vercel.app/)
 - Author: [GitHub](https://github.com/ErdongChen-Andrew), [X / Twitter](https://x.com/AndrewChenE), [Website](https://www.erdong-chen.com/)

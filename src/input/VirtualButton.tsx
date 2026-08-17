@@ -50,8 +50,9 @@ const defaultButtonCapStyle: React.CSSProperties = {
 const VirtualButton = (props: VirtualButtonProps) => {
     // Reference to the button cap element for style manipulation
     const capRef = useRef<HTMLDivElement>(null);
+    const activePointerIdRef = useRef<number | null>(null);
     // Zustand store for managing button states
-    const { setButtonActive, resetAllButtons } = useButtonStore()
+    const setButtonActive = useButtonStore((state) => state.setButtonActive)
 
     // Styles for the button wrapper
     const buttonWrapperStyle: React.CSSProperties = {
@@ -70,6 +71,11 @@ const VirtualButton = (props: VirtualButtonProps) => {
     const pressFunction = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
+
+        if (activePointerIdRef.current !== null) return;
+
+        activePointerIdRef.current = e.pointerId;
+        e.currentTarget.setPointerCapture(e.pointerId);
         setButtonActive(props.id, true);
         if (capRef.current) {
             capRef.current.style.transform = "translate(-50%, -50%) scale(1.3)";
@@ -78,9 +84,12 @@ const VirtualButton = (props: VirtualButtonProps) => {
     }, [setButtonActive, props.id])
 
     /**
-     * Function to reset the button state, called on pointer up or leave
+     * Function to reset the button state for the active pointer
      */
-    const resetFunction = useCallback(() => {
+    const resetFunction = useCallback((pointerId: number) => {
+        if (activePointerIdRef.current !== pointerId) return;
+
+        activePointerIdRef.current = null;
         setButtonActive(props.id, false);
         if (capRef.current) {
             capRef.current.style.transform = "translate(-50%, -50%) scale(1)";
@@ -88,17 +97,25 @@ const VirtualButton = (props: VirtualButtonProps) => {
         }
     }, [setButtonActive, props.id]);
 
-    // Reset all buttons when this component unmounts
-    useEffect(() => () => resetAllButtons(), [resetAllButtons]);
+    // Reset only this button when it unmounts or its id changes
+    useEffect(() => () => {
+        activePointerIdRef.current = null;
+        setButtonActive(props.id, false);
+        if (capRef.current) {
+            capRef.current.style.transform = "translate(-50%, -50%) scale(1)";
+            capRef.current.style.opacity = "1";
+        }
+    }, [setButtonActive, props.id]);
 
     return (
         <div
             id="ecctrl-virtual-button"
             style={buttonWrapperStyle}
             onContextMenu={(e) => e.preventDefault()}
-            onPointerDown={(e) => pressFunction(e)}
-            onPointerUp={resetFunction}
-            onPointerLeave={resetFunction}
+            onPointerDown={pressFunction}
+            onPointerUp={(e) => resetFunction(e.pointerId)}
+            onPointerCancel={(e) => resetFunction(e.pointerId)}
+            onLostPointerCapture={(e) => resetFunction(e.pointerId)}
         >
             <div id="virtual-button-cap" style={buttonCapStyle} ref={capRef} >
                 {props.label}

@@ -1,6 +1,6 @@
 {
   "name": "ecctrl",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "author": "Erdong Chen",
   "license": "MIT",
   "description": "A physics-driven character, vehicle, and custom-gravity controller toolkit for React Three Fiber and Rapier.",
@@ -31,6 +31,7 @@
   },
   "files": [
     "dist",
+    "CHANGELOG.md",
     "LICENSE",
     "NOTICE"
   ],
