@@ -709,12 +709,10 @@ const Ecctrl: ForwardRefComponent<EcctrlProps, EcctrlHandle> = /* @__PURE__ */ f
    */
   const applyFriction = useCallback((body: RapierRigidBody, fpsCorr: number) => {
     if (!rayHitBody.current || !isOnGround.current) return
-    // Calculate friction coefficient    
-    slideFrictionCoef.current = clamp((standingPointFriction.current + slideGripFactor) * 0.5, 0, 1)
     // Apply friction impulse, I = m * Δv * frictionCoef    
     dragFrictionImpulse.current.copy(relativeVelOnPlane.current).negate().multiplyScalar(body.mass() * slideFrictionCoef.current * clamp(decDeltaTime, 0, 1))
     body.applyImpulse(dragFrictionImpulse.current.multiplyScalar(fpsCorr), false);
-  }, [slideGripFactor])
+  }, [decDeltaTime])
 
   /**
    * Slope detect function
@@ -1011,6 +1009,8 @@ const Ecctrl: ForwardRefComponent<EcctrlProps, EcctrlHandle> = /* @__PURE__ */ f
      */
     // if (!isZeroGravity.current) 
     floatCharacter(characterBody)
+    // Calculate friction coefficient    
+    slideFrictionCoef.current = clamp((standingPointFriction.current + slideGripFactor) * 0.5, 0, 1)
 
     /**
      * Detect if character is on a moving object
