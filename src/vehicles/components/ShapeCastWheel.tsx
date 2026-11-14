@@ -98,6 +98,7 @@ const ShapeCastWheel: ForwardRefComponent<ShapeCastWheelProps, THREE.Group> = /*
     const fixedYAxis = useMemo(() => new THREE.Vector3(0, 1, 0), [])
     const fixedZAxis = useMemo(() => new THREE.Vector3(0, 0, 1), [])
     const vehiclePos = useRef<THREE.Vector3>(new THREE.Vector3())
+    const vehicleCom = useRef<THREE.Vector3>(new THREE.Vector3())
     const vehicleQuat = useRef<THREE.Quaternion>(new THREE.Quaternion())
     const vehicleInvertQuat = useRef<THREE.Quaternion>(new THREE.Quaternion())
     const vehicleMatrix = useRef<THREE.Matrix4>(new THREE.Matrix4())
@@ -431,6 +432,7 @@ const ShapeCastWheel: ForwardRefComponent<ShapeCastWheelProps, THREE.Group> = /*
      */
     const updateVehicleInfo = useCallback((body: RapierRigidBody) => {
         vehiclePos.current.copy(body.translation());
+        vehicleCom.current.copy(body.worldCom());
         vehicleQuat.current.copy(body.rotation())
         vehicleMatrix.current.compose(vehiclePos.current, vehicleQuat.current, fixedScale)
 
@@ -478,7 +480,13 @@ const ShapeCastWheel: ForwardRefComponent<ShapeCastWheelProps, THREE.Group> = /*
      * Compute ray hit point relative velocity
      */
     const computeRelativeVelocity = useCallback(() => {
-        rayHitPointVelocity.current.copy(rayOriginVel.current)
+        if (rayHitBody.current) {
+            distFromRayOriginToVehicle.current.copy(rayHitPointPosition.current).sub(vehicleCom.current)
+            angvelToLinvel.current.crossVectors(vehicleAngVel.current, distFromRayOriginToVehicle.current)
+            rayHitPointVelocity.current.copy(vehicleLinVel.current).add(angvelToLinvel.current)
+        } else {
+            rayHitPointVelocity.current.copy(rayOriginVel.current)
+        }
         rayHitPointVelOnPlane.current.copy(rayHitPointVelocity.current).projectOnPlane(rayHitPointNormal.current)
         if (isOnMovingObject.current && followPlatform) {
             rayHitPointVelocity.current.sub(movingObjectVelocity.current)
@@ -506,7 +514,7 @@ const ShapeCastWheel: ForwardRefComponent<ShapeCastWheelProps, THREE.Group> = /*
         rayLeftAxis.current.crossVectors(rayUpAxis.current, rayFWDAxis.current).normalize();
 
         // Ray velocity combind with linvel and angvel
-        distFromRayOriginToVehicle.current.copy(rayOrigin.current).sub(vehiclePos.current)
+        distFromRayOriginToVehicle.current.copy(rayOrigin.current).sub(vehicleCom.current)
         angvelToLinvel.current.crossVectors(vehicleAngVel.current, distFromRayOriginToVehicle.current)
         rayOriginVel.current.copy(vehicleLinVel.current).add(angvelToLinvel.current)
 
@@ -525,6 +533,42 @@ const ShapeCastWheel: ForwardRefComponent<ShapeCastWheelProps, THREE.Group> = /*
         // rayBWDAxis.current.copy(rayFWDAxis.current).negate();
         // rayRWDAxis.current.crossVectors(rayFWDAxis.current, rayUpAxis.current).normalize();
     }, [steerWheel])
+
+    /**
+     * Detect is on a moving object
+     */
+    const isOnMovingObjectDetect = useCallback((body: RapierRigidBody) => {
+        // Body type 0 is rigid body, body type 1 is fixed body, body type 2 is kinematic body
+        if (followPlatform && rayHitBody.current && (rayHitBody.current.bodyType() === 0 || rayHitBody.current.bodyType() === 2)) {
+            isOnMovingObject.current = true;
+
+            // Find the proper rigid body mass ratio
+            if (rayHitBody.current.bodyType() === 0) {
+                const ratio = clamp(rayHitBody.current.mass() / Math.max(body.mass(), 1e-6), 0, 1)
+                massRatio.current = evaluateCurveLUT(ratio, massRatioFallOffCurve);
+            } else {
+                massRatio.current = 1
+            }
+
+            // Calculate distance between contact point and moving object center of mass
+            movingObjectPosition.current.copy(rayHitBody.current.worldCom())
+            distanceFromOriginToObjectPoint.current.copy(rayHitPointPosition.current).sub(movingObjectPosition.current);
+            // Moving object linear velocity
+            movingObjectLinearVelocity.current.copy(rayHitBody.current.linvel())
+            // Moving object angular velocity
+            movingObjectAngularVelocity.current.copy(rayHitBody.current.angvel())
+
+            // Combine object linear velocity and angular velocity to movingObjectVelocity
+            movingObjectAngvelToLinvel.current.crossVectors(movingObjectAngularVelocity.current, distanceFromOriginToObjectPoint.current)
+            movingObjectVelocity.current.copy(movingObjectLinearVelocity.current).add(movingObjectAngvelToLinvel.current).multiplyScalar(massRatio.current)
+            movingObjectVelocityOnPlane.current.copy(movingObjectVelocity.current).projectOnPlane(rayHitPointNormal.current)
+        } else {
+            isOnMovingObject.current = false;
+            movingObjectVelocity.current.set(0, 0, 0);
+            movingObjectVelocityOnPlane.current.set(0, 0, 0)
+            massRatio.current = 1
+        }
+    }, [followPlatform, massRatioFallOffCurve])
 
     /**
      * Floating function
@@ -601,6 +645,9 @@ const ShapeCastWheel: ForwardRefComponent<ShapeCastWheelProps, THREE.Group> = /*
             // Retrieve ray hit point friction
             if (rayHitPointFriction.current !== hitCollider.friction())
                 rayHitPointFriction.current = hitCollider.friction() ?? 0
+            // Update moving platform state and colocated contact-point relative velocity before damping
+            isOnMovingObjectDetect(body)
+            computeRelativeVelocity()
             // Compute spring and damping force
             const springForce = springK * Math.max(0, rayLength - suspensionToi.current);
             const dampingForce = dampingC * rayHitPointVelocity.current.dot(rayUpAxis.current);
@@ -612,44 +659,10 @@ const ShapeCastWheel: ForwardRefComponent<ShapeCastWheelProps, THREE.Group> = /*
             suspensionToi.current = 0
             rayHitPointFriction.current = 0
             floatingImpulse.current.set(0, 0, 0)
+            isOnMovingObjectDetect(body)
+            computeRelativeVelocity()
         }
-    }, [groundDetection, rayCast, rayShape, rayLength, rayShapeR, rayShapeH, springK, dampingC, ecctrlVehicleRayFilter])
-
-    /**
-     * Detect is on a moving object
-     */
-    const isOnMovingObjectDetect = useCallback((body: RapierRigidBody) => {
-        // Body type 0 is rigid body, body type 1 is fixed body, body type 2 is kinematic body
-        if (followPlatform && rayHitBody.current && (rayHitBody.current.bodyType() === 0 || rayHitBody.current.bodyType() === 2)) {
-            isOnMovingObject.current = true;
-
-            // Find the proper rigid body mass ratio
-            if (rayHitBody.current.bodyType() === 0) {
-                const ratio = clamp(rayHitBody.current.mass() / Math.max(body.mass(), 1e-6), 0, 1)
-                massRatio.current = evaluateCurveLUT(ratio, massRatioFallOffCurve);
-            } else {
-                massRatio.current = 1
-            }
-
-            // Calculate distance between rayOrigin and moving object
-            movingObjectPosition.current.copy(rayHitBody.current.translation())
-            distanceFromOriginToObjectPoint.current.copy(rayOrigin.current).sub(movingObjectPosition.current);
-            // Moving object linear velocity
-            movingObjectLinearVelocity.current.copy(rayHitBody.current.linvel())
-            // Moving object angular velocity
-            movingObjectAngularVelocity.current.copy(rayHitBody.current.angvel())
-
-            // Combine object linear velocity and angular velocity to movingObjectVelocity
-            movingObjectAngvelToLinvel.current.crossVectors(movingObjectAngularVelocity.current, distanceFromOriginToObjectPoint.current)
-            movingObjectVelocity.current.copy(movingObjectLinearVelocity.current).add(movingObjectAngvelToLinvel.current).multiplyScalar(massRatio.current)
-            movingObjectVelocityOnPlane.current.copy(movingObjectVelocity.current).projectOnPlane(rayHitPointNormal.current)
-        } else {
-            isOnMovingObject.current = false;
-            movingObjectVelocity.current.set(0, 0, 0);
-            movingObjectVelocityOnPlane.current.set(0, 0, 0)
-            massRatio.current = 1
-        }
-    }, [followPlatform, massRatioFallOffCurve])
+    }, [groundDetection, rayCast, rayShape, rayLength, rayShapeR, rayShapeH, springK, dampingC, ecctrlVehicleRayFilter, isOnMovingObjectDetect, computeRelativeVelocity])
 
     /**
      * Apply wheel mass on standing collider
@@ -727,7 +740,7 @@ const ShapeCastWheel: ForwardRefComponent<ShapeCastWheelProps, THREE.Group> = /*
     /**
      * Compute longitudinal and lateral friction impulses based on wheel slip and contact conditions
      */
-    const computeWheelFrictionImpulse = useCallback((gravityMag: number) => {
+    const computeWheelFrictionImpulse = useCallback((gravityMag: number, body: RapierRigidBody) => {
         // Early exit if no contact, no need to compute friction
         if (!rayHitBody.current) {
             wheelSupportForceMag.current = wheelMass * gravityMag
@@ -776,9 +789,32 @@ const ShapeCastWheel: ForwardRefComponent<ShapeCastWheelProps, THREE.Group> = /*
         const maxLngImp = wheelSupportForceMag.current * finalLngSlipValue * frictionCoef.current * world.timestep * lngFrictionEllipseScale
         const maxLatImp = wheelSupportForceMag.current * finalLatSlipValue * frictionCoef.current * world.timestep * latFrictionEllipseScale
 
-        // Compute desired longitudinal and lateral friction impulse based on slip and speed
+        // Compute desired longitudinal and lateral friction impulse based on slip and speed,
+        // scaled by the rigid-body Delassus effective mass at the contact point so roll/yaw lever arms cannot overshoot.
+        const supportedMass = wheelSupportForceMag.current / gravityMag
+        let latEffectiveMass = supportedMass
+        const bodyMass = body.mass()
+        if (bodyMass > 0) {
+            const rx = rayHitPointPosition.current.x - vehicleCom.current.x
+            const ry = rayHitPointPosition.current.y - vehicleCom.current.y
+            const rz = rayHitPointPosition.current.z - vehicleCom.current.z
+            const lx = latAxis.current.x
+            const ly = latAxis.current.y
+            const lz = latAxis.current.z
+            const cx = ry * lz - rz * ly
+            const cy = rz * lx - rx * lz
+            const cz = rx * ly - ry * lx
+            const invI = body.effectiveWorldInvInertia()
+            const rotTerm =
+                cx * (invI.m11 * cx + invI.m12 * cy + invI.m13 * cz) +
+                cy * (invI.m21 * cx + invI.m22 * cy + invI.m23 * cz) +
+                cz * (invI.m31 * cx + invI.m32 * cy + invI.m33 * cz)
+            if (rotTerm > 0) {
+                latEffectiveMass = supportedMass / (1 + bodyMass * rotTerm)
+            }
+        }
         desiredLngImpulse.current = slipDiff * effectiveInertia.current / (rayShapeR * rayShapeR)
-        desiredLatImpulse.current = latContactVel * (wheelSupportForceMag.current / gravityMag)
+        desiredLatImpulse.current = latContactVel * latEffectiveMass
 
         // Clamp the desired friction impulse within the friction ellipse
         const ellipseUsage = Math.sqrt(desiredLngImpulse.current / maxLngImp * desiredLngImpulse.current / maxLngImp + desiredLatImpulse.current / maxLatImp * desiredLatImpulse.current / maxLatImp);
@@ -928,11 +964,8 @@ const ShapeCastWheel: ForwardRefComponent<ShapeCastWheelProps, THREE.Group> = /*
         // Update wheel steering angle based on input
         steeringWheel()
 
-        // Update ray hit info and compute floating impulse
+        // Update ray hit info, relative contact velocity, and compute floating impulse
         floatVehicle(vehicleBody)
-
-        // Detect if on a moving object
-        isOnMovingObjectDetect(vehicleBody)
 
         // Apply opposite wheel mass to standing object
         applyMassOnStandCollider()
@@ -940,14 +973,11 @@ const ShapeCastWheel: ForwardRefComponent<ShapeCastWheelProps, THREE.Group> = /*
         // Apply opposite tire friction to standing object
         applyFricitonOnStandCollider()
 
-        // Compute relative ray hit point velocity (with/without moving object)
-        computeRelativeVelocity()
-
         // Compute contact point friction coefficient
         computeContactFriction()
 
         // Compute tire lng/lat impulse that will applied to the vehicle
-        computeWheelFrictionImpulse(vehicleGravityMag)
+        computeWheelFrictionImpulse(vehicleGravityMag, vehicleBody)
 
         // Compute wheel rotation speed based on drive/brake torque and friction impulse, then apply the rotation to wheel angular velocity
         solveWheelRotation()
