@@ -8,8 +8,7 @@
 
 import * as THREE from "three"
 import React, { useRef, useMemo, type ReactNode, forwardRef, useImperativeHandle, useCallback, createContext, useEffect } from "react";
-import { type RapierRigidBody, RigidBody, useRapier, type RigidBodyProps } from "@react-three/rapier"
-import { useFrame } from "@react-three/fiber";
+import { type RapierRigidBody, RigidBody, useBeforePhysicsStep, useRapier, type RigidBodyProps } from "@react-three/rapier"
 import { clamp } from "three/src/math/MathUtils.js";
 import { useCustomGravity } from "../gravity/useCustomGravity";
 import { createSlerpVec3 } from "../shared/Math";
@@ -68,12 +67,73 @@ const DEFAULT_DRONE_CONFIG = {
 const getDriveRatio = (gearRatios: number[], gearIndex: number, finalDriveRatio: number) => (gearRatios[gearIndex] ?? gearRatios[0] ?? 0) * finalDriveRatio
 const getMaxWheelAngVel = (engineMaxRPM: number, driveRatio: number) => driveRatio !== 0 ? (engineMaxRPM / driveRatio) * (2 * Math.PI / 60) : 0
 
+function solve4x4(G: Float64Array, b: Float64Array, aug: Float64Array, out: Float64Array): void {
+    for (let r = 0; r < 4; r++) {
+        const r4 = r * 4
+        const r5 = r * 5
+        aug[r5] = G[r4]
+        aug[r5 + 1] = G[r4 + 1]
+        aug[r5 + 2] = G[r4 + 2]
+        aug[r5 + 3] = G[r4 + 3]
+        aug[r5 + 4] = b[r]
+    }
+    for (let col = 0; col < 4; col++) {
+        let pivotRow = col
+        let maxAbs = Math.abs(aug[col * 5 + col])
+        for (let r = col + 1; r < 4; r++) {
+            const v = Math.abs(aug[r * 5 + col])
+            if (v > maxAbs) {
+                maxAbs = v
+                pivotRow = r
+            }
+        }
+        if (maxAbs < 1e-15) {
+            out[col] = 0
+            continue
+        }
+        if (pivotRow !== col) {
+            const c5 = col * 5
+            const p5 = pivotRow * 5
+            for (let k = col; k < 5; k++) {
+                const tmp = aug[c5 + k]
+                aug[c5 + k] = aug[p5 + k]
+                aug[p5 + k] = tmp
+            }
+        }
+        const c5 = col * 5
+        const diag = aug[c5 + col]
+        for (let r = col + 1; r < 4; r++) {
+            const r5 = r * 5
+            const factor = aug[r5 + col] / diag
+            if (factor === 0) continue
+            for (let k = col + 1; k < 5; k++) {
+                aug[r5 + k] -= factor * aug[c5 + k]
+            }
+        }
+    }
+    for (let r = 3; r >= 0; r--) {
+        const r5 = r * 5
+        const diag = aug[r5 + r]
+        if (Math.abs(diag) < 1e-15) {
+            out[r] = 0
+            continue
+        }
+        let sum = aug[r5 + 4]
+        for (let c = r + 1; c < 4; c++) {
+            sum -= aug[r5 + c] * out[c]
+        }
+        out[r] = sum / diag
+    }
+}
+
 export type WheelsInfoType = ReadonlyMap<string, React.RefObject<Readonly<WheelInfoType>>>;
 export type PropellersInfoType = ReadonlyMap<string, React.RefObject<Readonly<PropellerInfoType>>>;
 type MutableWheelsInfoType = Map<string, React.RefObject<Readonly<WheelInfoType>>>;
 type MutablePropellersInfoType = Map<string, React.RefObject<PropellerInfoType>>;
 export const VehicleContext = createContext<{
     body: React.RefObject<RapierRigidBody | null>
+    enableCustomGravity: boolean
+    referenceGravity: React.RefObject<THREE.Vector3>
     upAxis: React.RefObject<THREE.Vector3>
     gravityDir: React.RefObject<THREE.Vector3>
     gravityMag: React.RefObject<number>
@@ -173,6 +233,11 @@ const EcctrlVehicle: ForwardRefComponent<EcctrlVehicleProps, EcctrlVehicleHandle
      */
     const maxTiltTan = useMemo(() => Math.tan(droneControlConfig.maxTiltAngle), [droneControlConfig.maxTiltAngle])
     const hoverThrottle = useRef<number>(0)
+    const desiredVertForce = useRef<number>(0)
+    const gramMatrix = useRef<Float64Array>(new Float64Array(16))
+    const wrenchRhs = useRef<Float64Array>(new Float64Array(4))
+    const wrenchAug = useRef<Float64Array>(new Float64Array(20))
+    const wrenchLambda = useRef<Float64Array>(new Float64Array(4))
     const targetUp = useRef<THREE.Vector3>(new THREE.Vector3())
     const tiltError = useRef<THREE.Vector3>(new THREE.Vector3())
     const tiltAngVel = useRef<THREE.Vector3>(new THREE.Vector3())
@@ -205,11 +270,12 @@ const EcctrlVehicle: ForwardRefComponent<EcctrlVehicleProps, EcctrlVehicleHandle
     const gravityField = useCustomGravity((state) => state.gravityField)
     const applyGravityField = useCustomGravity((state) => state.applyGravityField)
     // const isZeroGravity = useRef<boolean>(false)
-    const upAxis = useRef<THREE.Vector3>(new THREE.Vector3());
+    const upAxis = useRef<THREE.Vector3>(new THREE.Vector3(0, 1, 0));
     const referenceGravity = useRef<THREE.Vector3>(new THREE.Vector3());
     const referenceGravityMag = useRef<number>(0);
-    const referenceGravityDir = useRef<THREE.Vector3>(new THREE.Vector3());
-    const gravityDir = useRef<THREE.Vector3>(new THREE.Vector3());
+    const referenceGravityDir = useRef<THREE.Vector3>(new THREE.Vector3(0, -1, 0));
+    const gravityDir = useRef<THREE.Vector3>(new THREE.Vector3(0, -1, 0));
+    const gravityInitRef = useRef<boolean>(false);
     const slerpRef = useRef(createSlerpVec3());
 
     /**
@@ -249,6 +315,17 @@ const EcctrlVehicle: ForwardRefComponent<EcctrlVehicleProps, EcctrlVehicleHandle
     const vehicleXAxis = useRef<THREE.Vector3>(new THREE.Vector3())
     const vehicleYAxis = useRef<THREE.Vector3>(new THREE.Vector3())
     const vehicleZAxis = useRef<THREE.Vector3>(new THREE.Vector3())
+    if (!gravityInitRef.current) {
+        gravityInitRef.current = true
+        referenceGravity.current.copy(enableCustomGravity ? gravityField(vehiclePos.current) : world.gravity)
+        const initMag = referenceGravity.current.length()
+        referenceGravityMag.current = initMag
+        if (initMag > 1e-6) {
+            referenceGravityDir.current.copy(referenceGravity.current).divideScalar(initMag)
+            gravityDir.current.copy(referenceGravityDir.current)
+            upAxis.current.copy(gravityDir.current).negate()
+        }
+    }
     const setMovement = useCallback((movement: VehicleInput) => {
         if (movement.forward !== undefined) movementState.current.forward = movement.forward;
         if (movement.backward !== undefined) movementState.current.backward = movement.backward;
@@ -417,13 +494,11 @@ const EcctrlVehicle: ForwardRefComponent<EcctrlVehicleProps, EcctrlVehicleHandle
     }, [])
 
     /**
-     * Update gravity/upAxis direction and value
+     * Update gravity/upAxis direction and value (sensing only; custom gravity impulse is applied after wheel/propeller sampling)
      */
-    const updateGravityInfo = useCallback((body: RapierRigidBody) => {
+    const updateGravityInfo = useCallback(() => {
         if (enableCustomGravity) {
             referenceGravity.current.copy(gravityField(vehiclePos.current))
-            // Apply custom gravity
-            applyGravityField(body, world.timestep)
         } else {
             referenceGravity.current.copy(world.gravity)
         }
@@ -433,7 +508,7 @@ const EcctrlVehicle: ForwardRefComponent<EcctrlVehicleProps, EcctrlVehicleHandle
         if (referenceGravityDir.current.lengthSq() === 0) referenceGravityDir.current.copy(vehicleYAxis.current).negate()
         gravityDir.current.copy(slerpRef.current(gravityDir.current, referenceGravityDir.current, 1 - Math.exp(-gravityDirLerpSpeed * world.timestep), vehicleZAxis.current))
         upAxis.current.copy(gravityDir.current).negate()
-    }, [enableCustomGravity, gravityDirLerpSpeed, gravityField, applyGravityField])
+    }, [enableCustomGravity, gravityDirLerpSpeed, gravityField])
 
     /**
      * 
@@ -511,16 +586,24 @@ const EcctrlVehicle: ForwardRefComponent<EcctrlVehicleProps, EcctrlVehicleHandle
     const applyWheelImpulse = useCallback((wheels: WheelsInfoType, body: RapierRigidBody) => {
         if (!body) return
 
-        // wake up check: only wake up when any wheel has contact and non-zero velocity surface
+        // wake up check: wake when any wheel sees platform/drive motion or when all enabled wheels lose ground support under gravity
         if (body.isSleeping()) {
             let shouldWake = false
+            let enabledCount = 0
+            let hitCount = 0
             for (const wheel of wheels.values()) {
                 const w = wheel.current
+                if (!w.enable) continue
+                enabledCount++
                 if (!w.rayHit) continue
+                hitCount++
                 if (w.isOnPlatform || Math.abs(w.wheelLinVel) > 1e-4) {
                     shouldWake = true
                     break
                 }
+            }
+            if (!shouldWake && enabledCount > 0 && hitCount === 0 && referenceGravityMag.current > 1e-6) {
+                shouldWake = true
             }
 
             if (!shouldWake) return
@@ -545,6 +628,125 @@ const EcctrlVehicle: ForwardRefComponent<EcctrlVehicleProps, EcctrlVehicleHandle
 
         // Apply control logics based on selected control mode
         velocityBasedCarControl(input, wheels)
+
+        // Pass 1: step suspension, steering, contact axes, and per-wheel slope gravity in deterministic order
+        let hasSplitStep = false
+        wheels.forEach((wheel) => {
+            if (wheel.current.stepWheelSuspension) {
+                hasSplitStep = true
+                wheel.current.stepWheelSuspension()
+            } else {
+                wheel.current.stepWheelPhysics?.()
+            }
+        })
+
+        if (hasSplitStep) {
+            const driveIn = clamp((input.forward ? 1 : 0) - (input.backward ? 1 : 0), -1, 1)
+            let brakedSupportSum = 0
+            let brkDirX = 0, brkDirY = 0, brkDirZ = 0
+            if (driveIn === 0) {
+                wheels.forEach((wheel) => {
+                    const w = wheel.current
+                    if (!w.enable || !w.rayHit) return
+                    const fn = w.supportForceMag ?? 0
+                    if (fn <= 1e-6 || !w.isActivelyBraking) return
+                    brakedSupportSum += fn
+                    brkDirX += fn * w.lngAxis.x
+                    brkDirY += fn * w.lngAxis.y
+                    brkDirZ += fn * w.lngAxis.z
+                })
+            }
+
+            const brkDirLen = Math.hypot(brkDirX, brkDirY, brkDirZ)
+            if (driveIn === 0 && brakedSupportSum > 1e-6 && brkDirLen > 1e-6) {
+                const eBrkX = brkDirX / brkDirLen
+                const eBrkY = brkDirY / brkDirLen
+                const eBrkZ = brkDirZ / brkDirLen
+
+                // Pass 2a: unbraked wheels resist cross-slope gravity perpendicular to braked hold axis; accumulate residual vector
+                let remX = 0, remY = 0, remZ = 0
+                wheels.forEach((wheel) => {
+                    const w = wheel.current
+                    if (!w.enable) return
+                    if (!w.rayHit || (w.supportForceMag ?? 0) <= 1e-6) {
+                        w.stepWheelTireAndSpin?.()
+                        return
+                    }
+                    if (w.isActivelyBraking) return
+
+                    const sg = w.slopeGravImp!
+                    const alongBrk = sg.x * eBrkX + sg.y * eBrkY + sg.z * eBrkZ
+                    const crossX = sg.x - alongBrk * eBrkX
+                    const crossY = sg.y - alongBrk * eBrkY
+                    const crossZ = sg.z - alongBrk * eBrkZ
+                    const crossLen = Math.hypot(crossX, crossY, crossZ)
+
+                    let latHoldImp = 0
+                    if (crossLen > 1e-9) {
+                        const eCrossX = crossX / crossLen
+                        const eCrossY = crossY / crossLen
+                        const eCrossZ = crossZ / crossLen
+                        const cosDelta = w.latAxis.x * eCrossX + w.latAxis.y * eCrossY + w.latAxis.z * eCrossZ
+                        const crossDotLat = crossX * w.latAxis.x + crossY * w.latAxis.y + crossZ * w.latAxis.z
+                        latHoldImp = crossDotLat / Math.max(cosDelta * cosDelta, 0.25)
+                    }
+
+                    remX += sg.x - latHoldImp * w.latAxis.x
+                    remY += sg.y - latHoldImp * w.latAxis.y
+                    remZ += sg.z - latHoldImp * w.latAxis.z
+                    w.stepWheelTireAndSpin?.(0, latHoldImp)
+                })
+
+                // Pass 2b: distribute unbraked residual across braked wheels by normal load, then spill any caliper-saturated excess
+                // onto braked wheels that still have spare caliper capacity on the same rigid chassis
+                let excessAlongBrk = 0
+                let spareCapSum = 0
+                wheels.forEach((wheel) => {
+                    const w = wheel.current
+                    if (!w.enable || !w.rayHit || (w.supportForceMag ?? 0) <= 1e-6 || !w.isActivelyBraking) return
+                    const share = (w.supportForceMag ?? 0) / brakedSupportSum
+                    const sg = w.slopeGravImp!
+                    const effX = sg.x + share * remX
+                    const effY = sg.y + share * remY
+                    const effZ = sg.z + share * remZ
+                    const effLng = effX * w.lngAxis.x + effY * w.lngAxis.y + effZ * w.lngAxis.z
+                    const cap = w.maxCaliperImp ?? Infinity
+                    if (Math.abs(effLng) > cap) {
+                        const clamped = Math.sign(effLng) * cap
+                        excessAlongBrk += (effLng - clamped) * (w.lngAxis.x * eBrkX + w.lngAxis.y * eBrkY + w.lngAxis.z * eBrkZ)
+                    } else {
+                        spareCapSum += cap - Math.abs(effLng)
+                    }
+                })
+
+                wheels.forEach((wheel) => {
+                    const w = wheel.current
+                    if (!w.enable || !w.rayHit || (w.supportForceMag ?? 0) <= 1e-6 || !w.isActivelyBraking) return
+                    const share = (w.supportForceMag ?? 0) / brakedSupportSum
+                    const sg = w.slopeGravImp!
+                    const effX = sg.x + share * remX
+                    const effY = sg.y + share * remY
+                    const effZ = sg.z + share * remZ
+                    let effLng = effX * w.lngAxis.x + effY * w.lngAxis.y + effZ * w.lngAxis.z
+                    const effLat = effX * w.latAxis.x + effY * w.latAxis.y + effZ * w.latAxis.z
+                    const cap = w.maxCaliperImp ?? Infinity
+                    if (Math.abs(effLng) > cap) {
+                        effLng = Math.sign(effLng) * cap
+                    } else if (Math.abs(excessAlongBrk) > 1e-9 && spareCapSum > 1e-9) {
+                        const spare = cap - Math.abs(effLng)
+                        const align = w.lngAxis.x * eBrkX + w.lngAxis.y * eBrkY + w.lngAxis.z * eBrkZ
+                        if (Math.abs(align) > 1e-3) {
+                            effLng = clamp(effLng + (excessAlongBrk * (spare / spareCapSum)) / align, -cap, cap)
+                        }
+                    }
+                    w.stepWheelTireAndSpin?.(effLng, effLat)
+                })
+            } else {
+                wheels.forEach((wheel) => {
+                    wheel.current.stepWheelTireAndSpin?.()
+                })
+            }
+        }
 
         // Apply drive/brake/friction impulse from shape cast wheels
         applyWheelImpulse(wheels, body)
@@ -588,6 +790,7 @@ const EcctrlVehicle: ForwardRefComponent<EcctrlVehicleProps, EcctrlVehicleHandle
         let sumLX = 0, sumLY = 0, sumLZ = 0
         let sumAX = 0, sumAY = 0, sumAZ = 0
         propellers.forEach(p => {
+            if (!p.current.enable) return
             sumLX += p.current.lx
             sumLY += p.current.ly
             sumLZ += p.current.lz
@@ -617,7 +820,8 @@ const EcctrlVehicle: ForwardRefComponent<EcctrlVehicleProps, EcctrlVehicleHandle
         // Compute the necessary vertical hovering throttle, also clamp speed at maxVertSpeed
         const vertControl = clamp(vertPosErrorMag * droneControlConfig.VERT_POS_P, -droneControlConfig.VERT_POS_D * droneControlConfig.maxVertSpeed, droneControlConfig.VERT_POS_D * droneControlConfig.maxVertSpeed);
         const vertForceMag = weight + vertControl - vertLinVelMag * droneControlConfig.VERT_POS_D;
-        hoverThrottle.current = Math.max(0, vertForceMag / (sumWorldLY || 1))
+        desiredVertForce.current = Math.max(0, vertForceMag)
+        hoverThrottle.current = desiredVertForce.current / (sumWorldLY || 1)
 
         // Compute the tilted target up to move horizontally, also clamp speed at maxHorizSpeed
         horizForce.current.set(0, 0, 0).addScaledVector(horizPosError.current, droneControlConfig.HORIZ_POS_P).addScaledVector(horizLinVel.current, -droneControlConfig.HORIZ_POS_D).clampLength(0, droneControlConfig.HORIZ_POS_D * droneControlConfig.maxHorizSpeed);
@@ -639,7 +843,7 @@ const EcctrlVehicle: ForwardRefComponent<EcctrlVehicleProps, EcctrlVehicleHandle
             .addScaledVector(tiltError.current, droneControlConfig.TILT_P)
             .addScaledVector(tiltAngVel.current, -droneControlConfig.TILT_D)
             .addScaledVector(upAxis.current, yawRateError * droneControlConfig.YAW_VEL_P)
-        // Convert required torque to dorne local quaternion
+        // Convert required torque to drone local quaternion
         torqueBody.current.copy(torqueWorld.current).applyQuaternion(vehicleInvertQuat.current);
     }, [droneControlConfig, maxTiltTan]);
 
@@ -668,7 +872,8 @@ const EcctrlVehicle: ForwardRefComponent<EcctrlVehicleProps, EcctrlVehicleHandle
 
         // Compute the necessary vertical hovering throttle
         const verticalForceMag = weight + vertAccCmd.current * body.mass();
-        hoverThrottle.current = Math.max(0, verticalForceMag / (sumWorldLY || 1));
+        desiredVertForce.current = Math.max(0, verticalForceMag)
+        hoverThrottle.current = desiredVertForce.current / (sumWorldLY || 1);
 
         // Tilt the drone up axis towards the acceleration direction
         targetUp.current.copy(upAxis.current).multiplyScalar(referenceGravityMag.current).add(horizAccCmd.current).normalize();
@@ -685,31 +890,94 @@ const EcctrlVehicle: ForwardRefComponent<EcctrlVehicleProps, EcctrlVehicleHandle
             .addScaledVector(tiltError.current, droneControlConfig.TILT_P)
             .addScaledVector(tiltAngVel.current, -droneControlConfig.TILT_D)
             .addScaledVector(upAxis.current, yawRateError * droneControlConfig.YAW_VEL_P)
-        // Convert required torque to dorne local quaternion
+        // Convert required torque to drone local quaternion
         torqueBody.current.copy(torqueWorld.current).applyQuaternion(vehicleInvertQuat.current);
     }, [droneControlConfig, maxTiltTan]);
 
-    // Compute each propeller final throttle after mixer, also clamp it to valid range
-    const computePropellerFinalThrottle = useCallback((propeller: Readonly<PropellerInfoType>, maxSafeMix: number) => {
-        const mix =
-            (torqueBody.current.x * propeller.ax) / (propellerPotential.current.sumAX || 1) + // Pitch
-            (torqueBody.current.z * propeller.az) / (propellerPotential.current.sumAZ || 1) + // Roll
-            (torqueBody.current.y * propeller.ay) / (propellerPotential.current.sumAY || 1); // Yaw
+    // Solve 4x4 Gram / Moore-Penrose wrench allocator (W W^T + eps I) * lambda = b so asymmetric/offset-CoM drones hover dead-level
+    // while symmetric CoM reduces algebraically 1-for-1 to stock PD mixing
+    const solveDroneWrenchLambda = useCallback((propellers: MutablePropellersInfoType, body: RapierRigidBody, ux: number, uy: number, uz: number) => {
+        const G = gramMatrix.current
+        G.fill(0)
+        let sumAX = 0, sumAY = 0, sumAZ = 0
+        let sumAX2 = 0, sumAY2 = 0, sumAZ2 = 0
+        for (const propeller of propellers.values()) {
+            const info = propeller.current
+            if (!info.enable) continue
+            const fUp = info.lx * ux + info.ly * uy + info.lz * uz
+            const ax = info.ax
+            const ay = info.ay
+            const az = info.az
+            sumAX += Math.abs(ax)
+            sumAY += Math.abs(ay)
+            sumAZ += Math.abs(az)
+            sumAX2 += ax * ax
+            sumAY2 += ay * ay
+            sumAZ2 += az * az
 
-        return clamp(hoverThrottle.current + clamp(mix, -maxSafeMix, maxSafeMix), 0, 1)
+            G[0] += fUp * fUp; G[1] += fUp * ax; G[2] += fUp * ay; G[3] += fUp * az
+            G[4] += ax * fUp;  G[5] += ax * ax;  G[6] += ax * ay;  G[7] += ax * az
+            G[8] += ay * fUp;  G[9] += ay * ax;  G[10] += ay * ay; G[11] += ay * az
+            G[12] += az * fUp; G[13] += az * ax; G[14] += az * ay; G[15] += az * az
+        }
+        const trace = G[0] + G[5] + G[10] + G[15]
+        if (trace <= 1e-12) {
+            wrenchLambda.current.fill(0)
+            return
+        }
+        const eps = Math.max(1e-9, trace * 1e-9)
+        G[0] += eps
+        G[5] += eps
+        G[10] += eps
+        G[15] += eps
+
+        let sx = sumAX > 1e-9 ? sumAX2 / sumAX : 0
+        let sy = sumAY > 1e-9 ? sumAY2 / sumAY : 0
+        let sz = sumAZ > 1e-9 ? sumAZ2 / sumAZ : 0
+        const dt = world.timestep
+        if (dt > 0) {
+            const invI = body.effectiveWorldInvInertia()
+            // Upper bound on body-frame inverse principal inertia (trace is rotation-invariant >= max eigenvalue)
+            const invITrace = invI.m11 + invI.m22 + invI.m33
+            if (invITrace > 1e-9) {
+                const tiltDamp = Math.max(droneControlConfig.TILT_D, 1e-3)
+                const yawDamp = Math.max(droneControlConfig.YAW_VEL_P, 1e-3)
+                const maxTiltScale = 0.8 / (invITrace * tiltDamp * dt)
+                const maxYawScale = 0.8 / (invITrace * yawDamp * dt)
+                sx = Math.min(sx, maxTiltScale)
+                sy = Math.min(sy, maxYawScale)
+                sz = Math.min(sz, maxTiltScale)
+            }
+        }
+        const b = wrenchRhs.current
+        b[0] = desiredVertForce.current
+        b[1] = torqueBody.current.x * sx
+        b[2] = torqueBody.current.y * sy
+        b[3] = torqueBody.current.z * sz
+
+        solve4x4(G, b, wrenchAug.current, wrenchLambda.current)
+    }, [droneControlConfig.TILT_D, droneControlConfig.YAW_VEL_P, world])
+
+    const computePropellerFinalThrottle = useCallback((propeller: Readonly<PropellerInfoType>, ux: number, uy: number, uz: number) => {
+        if (!propeller.enable) return 0
+        const fUp = propeller.lx * ux + propeller.ly * uy + propeller.lz * uz
+        const lam = wrenchLambda.current
+        return clamp(fUp * lam[0] + propeller.ax * lam[1] + propeller.ay * lam[2] + propeller.az * lam[3], 0, 1)
     }, [])
 
     // Apply propellers final mixer and impulse
     const applyMixerImpulse = useCallback((propellers: MutablePropellersInfoType, body: RapierRigidBody) => {
-        // Compute the max mix, so the drone won't lift/lower while yaw/roll/pitch
-        const maxSafeMix = Math.min(1.0 - hoverThrottle.current, hoverThrottle.current);
+        const ux = vehicleXAxis.current.dot(upAxis.current)
+        const uy = vehicleYAxis.current.dot(upAxis.current)
+        const uz = vehicleZAxis.current.dot(upAxis.current)
+        solveDroneWrenchLambda(propellers, body, ux, uy, uz)
 
         // Wake up check: only wake up when the finalThrottle has changed
         if (body.isSleeping()) {
             let shouldWake = false
             for (const propeller of propellers.values()) {
                 const info = propeller.current
-                const finalThrottle = computePropellerFinalThrottle(info, maxSafeMix)
+                const finalThrottle = computePropellerFinalThrottle(info, ux, uy, uz)
                 if (Math.abs(finalThrottle - info.throttle) > 1e-4) {
                     shouldWake = true
                     break
@@ -722,7 +990,14 @@ const EcctrlVehicle: ForwardRefComponent<EcctrlVehicleProps, EcctrlVehicleHandle
 
         propellers.forEach((propeller) => {
             const info = propeller.current
-            const finalThrottle = computePropellerFinalThrottle(info, maxSafeMix)
+            if (!info.enable) {
+                info.finalThrottle = 0
+                if (info.setThrottle) info.setThrottle(0)
+                info.thrustImpulse.set(0, 0, 0)
+                info.torqueImpulse.set(0, 0, 0)
+                return
+            }
+            const finalThrottle = computePropellerFinalThrottle(info, ux, uy, uz)
 
             // Pass the finalThrottle to each propeller component for visualization 
             info.finalThrottle = finalThrottle
@@ -742,7 +1017,7 @@ const EcctrlVehicle: ForwardRefComponent<EcctrlVehicleProps, EcctrlVehicleHandle
             body.applyImpulseAtPoint(info.thrustImpulse, info.worldThrustPos, false);
             body.applyTorqueImpulse(info.torqueImpulse, false);
         })
-    }, [computePropellerFinalThrottle])
+    }, [computePropellerFinalThrottle, solveDroneWrenchLambda])
 
     // Apply air drag impulse
     const applyAirDrag = useCallback((body: RapierRigidBody) => {
@@ -753,6 +1028,11 @@ const EcctrlVehicle: ForwardRefComponent<EcctrlVehicleProps, EcctrlVehicleHandle
     // Main drone control application function
     const applyDroneControl = useCallback((propellers: MutablePropellersInfoType, body: RapierRigidBody, input: VehicleInput) => {
         if (!body) return;
+
+        // Step each registered propeller in deterministic order before computing potential
+        propellers.forEach((propeller) => {
+            propeller.current.stepPropellerPhysics?.()
+        })
 
         // Compute propellers overall potential
         computePropellerPotential(propellers);
@@ -803,20 +1083,13 @@ const EcctrlVehicle: ForwardRefComponent<EcctrlVehicleProps, EcctrlVehicleHandle
      * 
      */
 
-    useFrame(() => {
+    useBeforePhysicsStep(() => {
         // Skip the whole vehicle loop when disabled
         if (!enable || !vehicleRef.current) return
 
-        /**
-         * Update when character is not sleeping
-         */
-        if (!vehicleRef.current.isSleeping()) {
-            // Update vehicle collider pos/vel/quat/axis
-            updateVehicleInfo(vehicleRef.current)
-
-            //Update gravity value & direction, and then apply gravity
-            updateGravityInfo(vehicleRef.current)
-        }
+        // Always keep pose and sensed gravity vectors fresh (even when sleeping, so wakeup steps have exact gravityMag/upAxis)
+        updateVehicleInfo(vehicleRef.current)
+        updateGravityInfo()
 
         /**
          * Apply drive/brake/friction impulse from shape cast wheels
@@ -829,6 +1102,14 @@ const EcctrlVehicle: ForwardRefComponent<EcctrlVehicleProps, EcctrlVehicleHandle
          * whenever there is a propeller component
          */
         if (propellersInfo.current.size > 0) applyDroneControl(propellersInfo.current, vehicleRef.current, movementState.current)
+
+        /**
+         * Apply custom gravity impulse after wheels and propellers sample pre-step velocity so custom gravity
+         * neither biases suspension damping nor gets skipped on the step a sleeping body wakes up
+         */
+        if (enableCustomGravity && !vehicleRef.current.isSleeping()) {
+            applyGravityField(vehicleRef.current, world.timestep)
+        }
     })
 
     /**
@@ -848,6 +1129,8 @@ const EcctrlVehicle: ForwardRefComponent<EcctrlVehicleProps, EcctrlVehicleHandle
 
     const vehicleContextValue = useMemo(() => ({
         body: vehicleRef,
+        enableCustomGravity,
+        referenceGravity,
         upAxis: upAxis,
         gravityDir: gravityDir,
         gravityMag: referenceGravityMag,
@@ -865,7 +1148,7 @@ const EcctrlVehicle: ForwardRefComponent<EcctrlVehicleProps, EcctrlVehicleHandle
         unregWheel,
         regPropeller,
         unregPropeller,
-    }), [regWheel, unregWheel, regPropeller, unregPropeller])
+    }), [enableCustomGravity, regWheel, unregWheel, regPropeller, unregPropeller])
 
     return (
         <VehicleContext.Provider value={vehicleContextValue}>

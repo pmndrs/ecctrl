@@ -752,12 +752,12 @@ const Ecctrl: ForwardRefComponent<EcctrlProps, EcctrlHandle> = /* @__PURE__ */ f
    * Detect if character is on a moving object
    */
   const isOnMovingObjectDetect = useCallback((body: RapierRigidBody) => {
-    // Body type 0 is rigid body, body type 1 is fixed body, body type 2 is kinematic body
-    if (followPlatform && rayHitBody.current && isOnGround.current && (rayHitBody.current.bodyType() === 0 || rayHitBody.current.bodyType() === 2)) {
+    // Dynamic (0) and Kinematic Position/Velocity (2, 3) bodies move; Fixed (1) bodies do not
+    if (followPlatform && rayHitBody.current && isOnGround.current && (rayHitBody.current.isDynamic() || rayHitBody.current.isKinematic())) {
       isOnMovingObject.current = true;
 
       // Find the proper rigid body mass ratio
-      if (rayHitBody.current.bodyType() === 0) {
+      if (rayHitBody.current.isDynamic()) {
         const ratio = clamp(rayHitBody.current.mass() / Math.max(body.mass(), 1e-6), 0, 1)
         massRatio.current = evaluateCurveLUT(ratio, massRatioFallOffCurve);
       } else {

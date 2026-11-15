@@ -46,16 +46,15 @@ const ThrustPropeller: ForwardRefComponent<ThrustPropellerProps, THREE.Group> = 
     /**
      * Rapier preset
      */
-    const { rapier, world } = useRapier();
+    const { world, rigidBodyStates } = useRapier();
 
     /**
      * Retrieve context object from ecctrl vehicle
      */
     const vehicleValue = useContext(VehicleContext)
-    const vehicleBody = vehicleValue!.body.current
     const vehiclePos = useRef<THREE.Vector3>(new THREE.Vector3())
+    const vehicleLocalCom = useRef<THREE.Vector3>(new THREE.Vector3())
     const vehicleQuat = useRef<THREE.Quaternion>(new THREE.Quaternion())
-    const vehicleInvertQuat = useRef<THREE.Quaternion>(new THREE.Quaternion())
     const vehicleLinVel = useRef<THREE.Vector3>(new THREE.Vector3())
     const vehicleAngVel = useRef<THREE.Vector3>(new THREE.Vector3())
 
@@ -63,6 +62,7 @@ const ThrustPropeller: ForwardRefComponent<ThrustPropellerProps, THREE.Group> = 
      * Control preset
      */
     const localPos = useRef<THREE.Vector3>(new THREE.Vector3())
+    const localArm = useRef<THREE.Vector3>(new THREE.Vector3())
     const localQuat = useRef<THREE.Quaternion>(new THREE.Quaternion())
     const worldPos = useRef<THREE.Vector3>(new THREE.Vector3())
     const worldQuat = useRef<THREE.Quaternion>(new THREE.Quaternion())
@@ -128,6 +128,14 @@ const ThrustPropeller: ForwardRefComponent<ThrustPropellerProps, THREE.Group> = 
         ay: 0,
         az: 0,
     })
+    propellerInfo.current.name = name
+    propellerInfo.current.enable = enable
+    propellerInfo.current.debug = debug
+    propellerInfo.current.maxThrust = maxThrust
+    propellerInfo.current.torqueRatio = torqueRatio
+    propellerInfo.current.debuggerScale = debuggerScale
+    propellerInfo.current.invertThrust = invertThrust
+    propellerInfo.current.invertTorque = invertTorque
     useEffect(() => {
         vehicleValue?.regPropeller(propellerInfo)
         return () => vehicleValue?.unregPropeller(propellerId)
@@ -217,28 +225,37 @@ const ThrustPropeller: ForwardRefComponent<ThrustPropellerProps, THREE.Group> = 
      */
     const updateVehicleInfo = useCallback((body: RapierRigidBody) => {
         vehiclePos.current.copy(body.translation());
+        vehicleLocalCom.current.copy(body.localCom());
         vehicleQuat.current.copy(body.rotation())
         vehicleLinVel.current.copy(body.linvel())
         vehicleAngVel.current.copy(body.angvel())
     }, [])
 
     /**
-     * Update propeller info function 
+     * Update propeller info function directly from local propeller transform (immune to Three.js render interpolation)
      */
-    const updatePropellerInfo = useCallback(() => {
+    const updatePropellerInfo = useCallback((body: RapierRigidBody) => {
         if (!thrustPropellerRef.current) return
 
-        thrustPropellerRef.current.getWorldPosition(worldPos.current);
-        thrustPropellerRef.current.getWorldQuaternion(worldQuat.current);
-        vehicleInvertQuat.current.copy(vehicleQuat.current).invert()
-
-        localPos.current.subVectors(worldPos.current, vehiclePos.current).applyQuaternion(vehicleInvertQuat.current);
-        localQuat.current.multiplyQuaternions(vehicleInvertQuat.current, worldQuat.current);
+        localPos.current.copy(thrustPropellerRef.current.position);
+        localQuat.current.copy(thrustPropellerRef.current.quaternion);
+        const rigidBodyObject = rigidBodyStates.get(body.handle)?.object;
+        let parent = thrustPropellerRef.current.parent;
+        if (rigidBodyObject && parent && parent !== rigidBodyObject) {
+            while (parent && parent !== rigidBodyObject) {
+                localPos.current.multiply(parent.scale).applyQuaternion(parent.quaternion).add(parent.position);
+                localQuat.current.premultiply(parent.quaternion);
+                parent = parent.parent;
+            }
+        }
+        worldQuat.current.multiplyQuaternions(vehicleQuat.current, localQuat.current);
+        worldPos.current.copy(localPos.current).applyQuaternion(vehicleQuat.current).add(vehiclePos.current);
 
         thrustDir.current.set(0, invertThrust ? -1 : 1, 0).applyQuaternion(localQuat.current);
         thrustForce.current.copy(thrustDir.current).multiplyScalar(maxThrust);
 
-        leverageTorque.current.crossVectors(localPos.current, thrustForce.current);
+        localArm.current.subVectors(localPos.current, vehicleLocalCom.current);
+        leverageTorque.current.crossVectors(localArm.current, thrustForce.current);
         reactionTorqueDir.current.set(0, invertTorque ? -1 : 1, 0).applyQuaternion(localQuat.current);
         reactionTorque.current.copy(reactionTorqueDir.current).multiplyScalar(maxThrust * torqueRatio)
         torqueInfluence.current.copy(leverageTorque.current).add(reactionTorque.current);
@@ -256,15 +273,17 @@ const ThrustPropeller: ForwardRefComponent<ThrustPropellerProps, THREE.Group> = 
         propellerInfo.current.torqueDir = reactionTorqueDir.current
         propellerInfo.current.torquePot = torqueInfluence.current
         propellerInfo.current.throttle = throttle.current
-    }, [invertThrust, invertTorque, maxThrust, torqueRatio])
+    }, [invertThrust, invertTorque, maxThrust, rigidBodyStates, torqueRatio])
 
     /**
      * Update propeller model function
      */
-    const updatePropellerModel = useCallback((frameRateCorrection: number) => {
+    const updatePropellerModel = useCallback((delta: number) => {
         if (!modelRef.current) return
+        const dt = delta > 0 ? delta : world.timestep
+        const frameRateCorrection = 60 * dt
         const targetVel = throttle.current * propellerModelMaxSpin * (invertTorque ? -1 : 1);
-        modelSpinVel.current = lerp(modelSpinVel.current, targetVel, 1 - Math.exp(-propellerModelLerpSpinRate * world.timestep))
+        modelSpinVel.current = lerp(modelSpinVel.current, targetVel, 1 - Math.exp(-propellerModelLerpSpinRate * dt))
         modelRef.current.rotateY(modelSpinVel.current * frameRateCorrection)
     }, [propellerModelMaxSpin, propellerModelLerpSpinRate, invertTorque])
 
@@ -276,47 +295,26 @@ const ThrustPropeller: ForwardRefComponent<ThrustPropellerProps, THREE.Group> = 
         if (currTorqueArrowRef.current) currTorqueArrowRef.current.setLength(throttle.current * debuggerArrowScale * torqueRatio)
     }, [debuggerArrowScale, torqueRatio])
 
-    /**
-     * 
-     * 
-     * 
-     * 
-     * 
-     * 
-     * 
-     * 
-     * 
-     * 
-     * 
-     * 
-     * 
-     * 
-     * 
-     * 
-     * 
-     * 
-     * 
-     * 
-     */
-
-    useFrame(() => {
-        // Early return if no vehicle body or not enabled
-        if (!vehicleBody || !enable) return
-
-        // Correct frame rate difference
-        const frameRateCorrection = 60 * world.timestep
+    const stepPropellerPhysics = useCallback(() => {
+        const body = vehicleValue?.body.current
+        if (!body || !enable) return
 
         // Update vehicle info
-        updateVehicleInfo(vehicleBody)
+        updateVehicleInfo(body)
 
         // Update propeller info
-        updatePropellerInfo()
+        updatePropellerInfo(body)
+    }, [vehicleValue, enable, updateVehicleInfo, updatePropellerInfo])
+    propellerInfo.current.stepPropellerPhysics = stepPropellerPhysics
+
+    useFrame((_, delta) => {
+        if (!vehicleValue?.body.current || !enable) return
 
         // Update propeller models
-        if (propellerModelUpdate) updatePropellerModel(frameRateCorrection)
+        if (propellerModelUpdate) updatePropellerModel(delta)
 
         // Update debug indicators 
-        updateDebugger()
+        if (debug) updateDebugger()
     })
 
     return (
@@ -381,6 +379,7 @@ export interface PropellerInfoType extends Omit<ThrustPropellerProps, 'id'> {
     finalThrottle: number
     throttle: number
     setThrottle?: (value: number) => void
+    stepPropellerPhysics?: () => void
 
     // Max potential impulse
     lx: number,

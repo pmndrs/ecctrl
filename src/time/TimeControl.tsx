@@ -7,8 +7,8 @@
  */
 
 import { useFrame } from "@react-three/fiber";
-import { useRapier } from "@react-three/rapier";
-import type { RefObject } from "react";
+import { useAfterPhysicsStep, useRapier } from "@react-three/rapier";
+import { useRef, type RefObject } from "react";
 import { clamp } from "three/src/math/MathUtils.js";
 
 type TimeControlValue = number | RefObject<number>
@@ -22,7 +22,13 @@ export type TimeControlProps = {
 const readTimeControlValue = (value: TimeControlValue) => typeof value === "number" ? value : value.current
 
 export function TimeControl({ paused = false, timeScale = 1, maxDelta = 1 / 30 }: TimeControlProps) {
-    const { step } = useRapier();
+    const { step, world } = useRapier();
+    const isFixedTimeStepRef = useRef(false);
+    const didStepRef = useRef(false);
+
+    useAfterPhysicsStep(() => {
+        didStepRef.current = true;
+    });
 
     useFrame((_, delta) => {
         if (paused) return;
@@ -32,7 +38,27 @@ export function TimeControl({ paused = false, timeScale = 1, maxDelta = 1 / 30 }
         const scale = readTimeControlValue(timeScale);
         if (scale <= 0 || dt <= 0) return;
 
-        step(dt * scale);
+        const stepDt = dt * scale;
+        const clampedStepDt = Math.min(stepDt, 0.5);
+        const prevTimestep = world.timestep;
+
+        // @react-three/rapier runs useBeforePhysicsStep callbacks before assigning world.timestep = delta.
+        // Pre-sync world.timestep when <Physics timeStep="vary"> is active, while preserving fixed timeStep accumulators.
+        if (!isFixedTimeStepRef.current) {
+            world.timestep = clampedStepDt;
+        }
+        didStepRef.current = false;
+
+        step(stepDt);
+
+        if (!isFixedTimeStepRef.current) {
+            if (!didStepRef.current) {
+                world.timestep = prevTimestep;
+                isFixedTimeStepRef.current = true;
+            } else if (Math.abs(world.timestep - clampedStepDt) > 1e-9) {
+                isFixedTimeStepRef.current = true;
+            }
+        }
     });
 
     return null;
