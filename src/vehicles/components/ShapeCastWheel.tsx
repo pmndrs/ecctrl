@@ -761,9 +761,14 @@ const ShapeCastWheel: ForwardRefComponent<ShapeCastWheelProps, THREE.Group> = /*
         // Retrieve longitudinal and lateral axis on the contact plane
         lngAxis.current.copy(rayFWDAxis.current).projectOnPlane(rayHitPointNormal.current).normalize()
         latAxis.current.copy(rayLeftAxis.current).projectOnPlane(rayHitPointNormal.current).normalize()
-        // Compute contact point longitudinal and lateral velocity
-        const lngContactVel = rayHitPointVelocity.current.dot(lngAxis.current)
-        const latContactVel = rayHitPointVelocity.current.dot(latAxis.current)
+        // Step-mean contact velocity along longitudinal and lateral axes (removing Rapier's (n - 1) / (2n) world-gravity substep bias)
+        const solverSteps = world.integrationParameters.numSolverIterations
+        const gravScale = body.gravityScale()
+        const substepWeight = ((solverSteps - 1) / (2 * solverSteps)) * world.timestep * gravScale
+        const worldGravLng = world.gravity.x * lngAxis.current.x + world.gravity.y * lngAxis.current.y + world.gravity.z * lngAxis.current.z
+        const worldGravLat = world.gravity.x * latAxis.current.x + world.gravity.y * latAxis.current.y + world.gravity.z * latAxis.current.z
+        const lngContactVel = rayHitPointVelocity.current.dot(lngAxis.current) - substepWeight * worldGravLng
+        const latContactVel = rayHitPointVelocity.current.dot(latAxis.current) - substepWeight * worldGravLat
         const lngContactVelAbs = Math.abs(lngContactVel)
         const latContactVelAbs = Math.abs(latContactVel)
         // Compute wheel linear and slip velocity at the contact point
@@ -814,7 +819,15 @@ const ShapeCastWheel: ForwardRefComponent<ShapeCastWheelProps, THREE.Group> = /*
             }
         }
         desiredLngImpulse.current = slipDiff * effectiveInertia.current / (rayShapeR * rayShapeR)
-        desiredLatImpulse.current = latContactVel * latEffectiveMass
+        // Slope-gravity feedforward: cancel the lateral gravity impulse this wheel's supported mass receives over the step,
+        // so the velocity-proportional law above holds a side slope instead of creeping at its steady-state error.
+        const normalGrav = -(world.gravity.x * rayHitPointNormal.current.x + world.gravity.y * rayHitPointNormal.current.y + world.gravity.z * rayHitPointNormal.current.z) * gravScale
+        const worldGravMag = Math.hypot(world.gravity.x, world.gravity.y, world.gravity.z) * gravScale
+        const slopeMass = worldGravMag > 1e-6 && normalGrav > 1e-6
+            ? wheelSupportForceMag.current / Math.max(normalGrav, 0.25 * worldGravMag)
+            : supportedMass
+        const latSlopeGravImp = slopeMass * worldGravLat * gravScale * world.timestep
+        desiredLatImpulse.current = latContactVel * latEffectiveMass + latSlopeGravImp
 
         // Clamp the desired friction impulse within the friction ellipse
         const ellipseUsage = Math.sqrt(desiredLngImpulse.current / maxLngImp * desiredLngImpulse.current / maxLngImp + desiredLatImpulse.current / maxLatImp * desiredLatImpulse.current / maxLatImp);
