@@ -525,6 +525,8 @@ const EcctrlVehicle: ForwardRefComponent<EcctrlVehicleProps, EcctrlVehicleHandle
 
             if (!shouldWake) return
             body.wakeUp()
+            // Gravity was skipped this frame while asleep, so apply no wheel impulse either (no bump on wake)
+            return
         }
 
         wheels.forEach((wheel) => {
